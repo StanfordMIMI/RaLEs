@@ -1,0 +1,6 @@
+eval_name: drelectra_600k
+model_name_or_path: /dataNAS/people/jmz/models/radiology_transformers/pytorch_electra/checkpoints/pretrain_30k_wp_small_pretrained_1M/discriminator
+tokenizer_path: /dataNAS/people/jmz/jmz_code/radiology_nlp/radcore_nlp/electra/wordpiece/stanford_wp/basic_wp_tokenizer.json
+cache_dir: /dataNAS/people/jmz/models/transformers_downloads/
+eval_datasets: ['stanford_body_ct_protocol']
+output_dir: '../results/classification/'

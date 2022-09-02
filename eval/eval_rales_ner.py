@@ -199,7 +199,7 @@ class DataTrainingArguments:
         },
     )
     return_entity_level_metrics: bool = field(
-        default=False,
+        default=True,
         metadata={"help": "Whether to return all the entity levels during evaluation or just the overall ones."},
     )
 
@@ -216,7 +216,7 @@ class DataTrainingArguments:
         self.task_name = self.task_name.lower()
 
 
-def main():
+def run_ner(config_mods=None):
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
@@ -224,7 +224,10 @@ def main():
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     send_example_telemetry("run_ner", model_args, data_args)
-
+    if config_mods is not None:
+        model_args = config_mods(model_args)
+        data_args = config_mods(data_args)
+        training_args = config_mods(training_args)
     # Setup logging
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -314,6 +317,8 @@ def main():
         label_column_name = data_args.label_column_name
     elif f"{data_args.task_name}_tags" in column_names:
         label_column_name = f"{data_args.task_name}_tags"
+    elif "tokens" in column_names:
+        label_column_name = "tokens"
     else:
         label_column_name = column_names[1]
 
@@ -618,8 +623,8 @@ def main():
 
 def _mp_fn(index):
     # For xla_spawn (TPUs)
-    main()
+    run_ner()
 
 
 if __name__ == "__main__":
-    main()
+    run_ner()
