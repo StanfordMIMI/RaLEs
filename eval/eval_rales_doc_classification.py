@@ -26,8 +26,8 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
-from constants import TRANSFORMERS_DOWNLOAD_PATH, STANFORD_BODYCT_PROTOCOL_DIR
-from omegaconf import OmegaConf
+from constants import TRANSFORMERS_DOWNLOAD_PATH, STANFORD_BODYCT_PROTOCOL_DIR, MIMIC_PROTOCOLING_DIR
+from omegaconf import OmegaConf, dictconfig
 # from ray.tune.schedulers import PopulationBasedTraining
 # from ray import tune
 import wandb
@@ -36,7 +36,11 @@ def load_data(fpaths):
     """
     Load data from a filepath
     """
-    if fpaths[0].endswith('.csv'):
+    
+    if isinstance(fpaths, dictconfig.DictConfig):
+        
+        return load_dataset('csv', data_files=fpaths)
+    elif fpaths[0].endswith('.csv'): #TODO make this compatible with dict not list
         return load_dataset('csv', data_files={'train':[x for x in fpaths if 'train' in x]}), \
                 load_dataset('csv', data_files={'test':[x for x in fpaths if 'test' in x]})
     else:
@@ -75,7 +79,12 @@ def get_data_files_by_task(task):
     Get the data files for a given task
     """
     if task == 'stanford_body_ct_protocol':
-        return [os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'body_ct_protocols_ge_train.csv'), os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'body_ct_protocols_ge_test.csv')]
+        return {'train': os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'body_ct_protocols_ge_train.csv'),
+                'test':os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'body_ct_protocols_ge_test.csv')}
+    elif task == 'mimiciii_ct_procedure':
+        return {'train': os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_train.csv'), 
+                'val':   os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_dev.csv'), 
+                'test': os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_test.csv')}
     else:
         raise NotImplementedError('Loading data from {} is not implemented'.format(task))
 
@@ -89,11 +98,13 @@ def do_document_classification_rales(task, config=None):
         config = parse_config(config)
 
     config.data_files = get_data_files_by_task(task)
-
     # set seed
     set_seed(config.seed)
     # load data
-    train_data, test_data = load_data(config.data_files)
+    data = load_data(config.data_files)
+    print(data)
+    exit()
+    train_data = data['train']
     for label_col in [x for x in train_data['train'].features if 'label' in x]: #train 1 classifier per label class
         cols_to_remove = [x for x in train_data['train'].features if (x != label_col) & ('label' in x)]
         train_data_tmp = train_data.remove_columns(cols_to_remove)
