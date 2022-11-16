@@ -129,6 +129,6 @@ dmypy.json
 .pyre/
 
 # results
-results/*
+results/*/
 # wandb
-eval/wandb/*
+fine_tuning/wandb/*
