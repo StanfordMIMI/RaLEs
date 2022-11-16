@@ -129,7 +129,6 @@ dmypy.json
 .pyre/
 
 # results
-<<<<<<< HEAD
 results/*/
 inference/predictions/*
 # wandb
@@ -141,8 +140,4 @@ fine_tuning/wandb/*
 */*/__pycache__/*
 
 evaluation/bootstrap_results/*
-=======
-results/*
-# wandb
-eval/wandb/*
->>>>>>> a8b599b (adding support for document classification)
+results/*/

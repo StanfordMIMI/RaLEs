@@ -1,4 +1,3 @@
-
 ## Inference for RaLEs Tasks
 
 This directory provides scripts and utilities to perform inference (predictions) on the RaLEs tasks using trained models.
