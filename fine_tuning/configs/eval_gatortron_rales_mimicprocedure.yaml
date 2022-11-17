@@ -1,0 +1,7 @@
+eval_name: gatortron
+model_name_or_path: /dataNAS/people/jmz/models/gatortron_v1/huggingface/
+tokenizer_path: /dataNAS/people/jmz/models/gatortron_v1/huggingface/tokenizer
+config_name: /dataNAS/people/jmz/models/gatortron_v1/huggingface/config.json
+cache_dir: /dataNAS/people/jmz/models/transformers_downloads/
+eval_datasets: ['mimiciii_ct_procedure']
+output_dir: '../results/classification/'
