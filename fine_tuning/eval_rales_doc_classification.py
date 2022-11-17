@@ -26,10 +26,8 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
-from constants import TRANSFORMERS_DOWNLOAD_PATH, STANFORD_BODYCT_PROTOCOL_DIR, MIMIC_PROTOCOLING_DIR
+from constants import TRANSFORMERS_DOWNLOAD_PATH, MIMIC_PROTOCOLING_DIR
 from omegaconf import OmegaConf, dictconfig
-# from ray.tune.schedulers import PopulationBasedTraining
-# from ray import tune
 import wandb
 
 def load_data(fpaths):
@@ -38,8 +36,9 @@ def load_data(fpaths):
     """
     
     if isinstance(fpaths, dictconfig.DictConfig):
-        
-        return load_dataset('csv', data_files=fpaths)
+        # print(type(dict(fpaths)))
+        dset = load_dataset('csv', data_files=dict(fpaths))
+        return dset
     elif fpaths[0].endswith('.csv'): #TODO make this compatible with dict not list
         return load_dataset('csv', data_files={'train':[x for x in fpaths if 'train' in x]}), \
                 load_dataset('csv', data_files={'test':[x for x in fpaths if 'test' in x]})
@@ -55,10 +54,11 @@ def get_default_config():
     model_name_or_path: bert-base-uncased
     tokenizer_path: bert-base-uncased
     cache_dir: TRANSFORMERS_DOWNLOAD_PATH
-    eval_datasets: ['stanford_body_ct_protocol']
+    eval_datasets: ['mimiciii_ct_procedure']
     output_dir: '../results/classification'
     seed: 3751
 
+    eval_batch_size: 512
     dataset_text_col: 'order_text'
     """
     return OmegaConf.create(default_config)
@@ -78,13 +78,17 @@ def get_data_files_by_task(task):
     """
     Get the data files for a given task
     """
-    if task == 'stanford_body_ct_protocol':
-        return {'train': os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'body_ct_protocols_ge_train.csv'),
-                'test':os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'body_ct_protocols_ge_test.csv')}
-    elif task == 'mimiciii_ct_procedure':
+    # if task == 'stanford_body_ct_protocol':
+    #     return {'train': os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'body_ct_protocols_ge_train.csv'),
+    #             'test':os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'body_ct_protocols_ge_test.csv')}
+    if task == 'mimiciii_ct_procedure':
+        text_col = 'indication'
+        label_col = 'procedure_label'
+        to_remove = ['ROW_ID']
         return {'train': os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_train.csv'), 
                 'val':   os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_dev.csv'), 
-                'test': os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_test.csv')}
+                'test': os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_test.csv')}, text_col, label_col, to_remove
+                
     else:
         raise NotImplementedError('Loading data from {} is not implemented'.format(task))
 
@@ -97,125 +101,97 @@ def do_document_classification_rales(task, config=None):
     else:
         config = parse_config(config)
 
-    config.data_files = get_data_files_by_task(task)
+    config.data_files, text_col, label_col, cols_to_remove = get_data_files_by_task(task)
     # set seed
     set_seed(config.seed)
-    # load data
+    # load and format data
     data = load_data(config.data_files)
-    print(data)
-    exit()
-    train_data = data['train']
-    for label_col in [x for x in train_data['train'].features if 'label' in x]: #train 1 classifier per label class
-        cols_to_remove = [x for x in train_data['train'].features if (x != label_col) & ('label' in x)]
-        train_data_tmp = train_data.remove_columns(cols_to_remove)
-        test_data_tmp = test_data.remove_columns(cols_to_remove)
-        
-        new_features = train_data_tmp['train'].features.copy()
-        class_labels = list(set(train_data_tmp['train'][label_col]))
-        n_labels = len(class_labels)
-        new_features[label_col] = ClassLabel(names=class_labels)
-        train_data_tmp['train'] = train_data_tmp['train'].cast(new_features)
-        test_data_tmp['test'] = test_data_tmp['test'].cast(new_features)
-
-        train_data_tmp['train'] = train_data_tmp['train'].rename_column(label_col, 'label')
-        test_data_tmp['test'] = test_data_tmp['test'].rename_column(label_col, 'label')
-        train_data_tmp['train'] = train_data_tmp['train'].rename_column(config.dataset_text_col, 'text')
-        test_data_tmp['test'] = test_data_tmp['test'].rename_column(config.dataset_text_col, 'text')
+    data = data.rename_column(text_col,'text').rename_column(label_col,'label')
+    # data = data.remove_columns(cols_to_remove)
+    n_labels = len(set(data['train']['label']))
+    label2id = {label:idx for idx,label in enumerate(set(data['train']['label']))}
+    id2label = {idx:label for label,idx in label2id.items()}
+    new_features = data['train'].features.copy()
+    new_features['label'] = ClassLabel(names=[id2label[idx] for idx in sorted(list(id2label.keys()))])
+    data = data.cast(new_features)
     
-        if 'val' not in train_data_tmp and 'test' not in train_data_tmp:
-            train_data_tmp = train_data_tmp['train'].train_test_split(test_size=0.2, shuffle=True, seed=config.seed, stratify_by_column='label')
+    # load tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(config.tokenizer_path, cache_dir=config.cache_dir)
 
+    def preprocess_fn(x):
+        return tokenizer(x['text'], padding=True, truncation=True)
 
-        # load tokenizer
-        if config.tokenizer_path.endswith('.json'):
-            tokenizer = ElectraTokenizerFast(tokenizer_file=config.tokenizer_path)
-        else:
-            tokenizer = AutoTokenizer.from_pretrained(config.tokenizer_path, cache_dir=config.cache_dir)
+    tokenized_data = data.map(preprocess_fn, batched=True)
+    
+    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
-        def preprocess_fn(x):
-            return tokenizer(x['text'], truncation=True)
+    # load model
+    def init_model():
+        return AutoModelForSequenceClassification.from_pretrained(config.model_name_or_path, cache_dir=config.cache_dir, num_labels=n_labels, label2id=label2id, id2label=id2label)
 
-        tokenized_train_data = train_data_tmp.map(preprocess_fn, batched=True)
-        tokenized_test_data = test_data_tmp.map(preprocess_fn, batched=True)
+    # load metrics
+    accuracy = evaluate.load('accuracy')
+    precision = evaluate.load('precision')
+    recall = evaluate.load('recall')
+    f1score = evaluate.load('f1')
+    auroc = evaluate.load('roc_auc')
+    matthews = evaluate.load('matthews_correlation')
+    def compute_metrics(eval_pred):
+        results = {}
+        probs, labels = eval_pred
+        predictions = probs.argmax(axis=-1)
+        results['accuracy'] = accuracy.compute(predictions=predictions, references=labels)['accuracy']
+        results['precision'] = precision.compute(predictions=predictions, references=labels, average='micro')['precision']
+        results['recall'] = recall.compute(predictions=predictions, references=labels, average='micro')['recall']
+        results['f1_micro'] = f1score.compute(predictions=predictions, references=labels, average='micro')['f1']
+        results['f1_macro'] = f1score.compute(predictions=predictions, references=labels, average='macro')['f1']
+        results['matthews_correlation'] = matthews.compute(predictions=predictions, references=labels)['matthews_correlation']
         
-        data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+        return results
 
-        # load model
-        def init_model():
-            return AutoModelForSequenceClassification.from_pretrained(config.model_name_or_path, cache_dir=config.cache_dir, num_labels=n_labels)
+    # define train args
+    train_args = TrainingArguments(
+        output_dir=f'{config.output_dir}_{config.eval_name}_{task}',
+        overwrite_output_dir=True,
+        do_eval=True,
+        evaluation_strategy='epoch',
+        logging_strategy='epoch',
+        save_strategy='epoch',
+        save_total_limit=1,
+        load_best_model_at_end=True,
+        metric_for_best_model='f1_micro',
+        per_device_eval_batch_size=config.eval_batch_size,
+    )
 
-        # load metrics
-        accuracy = evaluate.load('accuracy')
-        precision = evaluate.load('precision')
-        recall = evaluate.load('recall')
-        f1score = evaluate.load('f1')
-        auroc = evaluate.load('roc_auc')
-        matthews = evaluate.load('matthews_correlation')
-        def compute_metrics(eval_pred):
-            results = {}
-            probs, labels = eval_pred
-            predictions = probs.argmax(axis=-1)
-            results['accuracy'] = accuracy.compute(predictions=predictions, references=labels)['accuracy']
-            results['precision'] = precision.compute(predictions=predictions, references=labels, average='micro')['precision']
-            results['recall'] = recall.compute(predictions=predictions, references=labels, average='micro')['recall']
-            # results['f1'] = f1score.compute(predictions=predictions, references=labels, average=None)
-            results['f1_micro'] = f1score.compute(predictions=predictions, references=labels, average='micro')['f1']
-            results['f1_macro'] = f1score.compute(predictions=predictions, references=labels, average='macro')['f1']
-            # results['roc_auc'] = auroc.compute(predictions=predictions, references=labels)
-            results['matthews_correlation'] = matthews.compute(predictions=predictions, references=labels)['matthews_correlation']
-            
-            return results
+    trainer = Trainer(
+        model_init=init_model,
+        args=train_args,
+        train_dataset=tokenized_data['train'],
+        eval_dataset=tokenized_data['test'],
+        tokenizer=tokenizer,
+        data_collator=data_collator,
+        compute_metrics=compute_metrics,
+    )
+    def hp_space(trial):
+        """
+        formatted as optuna objective (see https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/002_configurations.html#sphx-glr-tutorial-10-key-features-002-configurations-py)
+        """
+        return {
+            "learning_rate": trial.suggest_float("learning_rate", 1e-6, 1e-4, log=True),
+            "num_train_epochs": trial.suggest_int("num_train_epochs", 3, 6),
+            "per_device_train_batch_size": trial.suggest_categorical("per_device_train_batch_size", [32,64,128]),
+            "weight_decay": trial.suggest_float("weight_decay", 1e-12, 1e-1, log=True)
+        }
 
-        # define train args
-        train_args = TrainingArguments(
-            output_dir=f'{config.output_dir}_{config.eval_name}_{label_col}',
-            overwrite_output_dir=True,
-            do_eval=True,
-            evaluation_strategy='epoch',
-            logging_strategy='epoch',
-            save_strategy='epoch',
-            save_total_limit=1,
-            load_best_model_at_end=True,
-            metric_for_best_model='eval_accuracy',
+    best_model = trainer.hyperparameter_search(
+        direction='maximize',
+        n_trials=10, 
+        hp_space=hp_space,
+        compute_objective= lambda metrics: metrics['eval_accuracy'],
+        study_name= f'{config.output_dir}_{config.eval_name}_{task}'
         )
 
-        trainer = Trainer(
-            model_init=init_model,
-            args=train_args,
-            train_dataset=tokenized_train_data['train'],
-            eval_dataset=tokenized_train_data['test'],
-            tokenizer=tokenizer,
-            data_collator=data_collator,
-            compute_metrics=compute_metrics,
-        )
-        def hp_space(trial):
-            return {
-                "learning_rate": trial.suggest_float("learning_rate", 1e-6, 1e-4, log=True),
-                "num_train_epochs": trial.suggest_int("num_train_epochs", 3, 6),
-                "per_device_train_batch_size": trial.suggest_categorical("per_device_train_batch_size", [8192, 16384]),
-                "weight_decay": trial.suggest_float("weight_decay", 1e-12, 1e-1, log=True)
-            }
-        # scheduler = PopulationBasedTraining(
-        #     mode='max',
-        #     metric='mean_accuracy',
-        #     perturbation_interval=2,
-        #     hyperparam_mutations={
-        #         'learning_rate': tune.loguniform(1e-6, 1e-2),
-        #         'weight_decay': tune.uniform(1e-12, 1e-1),
-        #         'per_device_train_batch_size': tune.choice([8,16,32]),
-        #         'num_train_epochs': tune.choice([2,3,4,5,6,7,8,9,10]),
-        #     },
-        # )
-        best_model = trainer.hyperparameter_search(
-            direction='maximize',
-            n_trials=1, 
-            # backend='ray',
-            hp_space=hp_space,
-            compute_objective= lambda metrics: metrics['eval_accuracy']
-            # scheduler=scheduler,
-            )
-
-        # evaluate best model
-        # trainer.test(best_model)
+    # evaluate best model
+    # trainer.test(best_model)
 if __name__=='__main__':
     main()
