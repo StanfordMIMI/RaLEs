@@ -17,7 +17,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type=str, default='../results/classification/_gatortron_mimiciii_ct_procedure/run-4/checkpoint-2270')
     parser.add_argument('--dataset_name', type=str, default='mimiciii_ct_procedure')
-    parser.add_argument('--output_dir', type=str, default='./predictions/mimiciii_ct_procedure_bert-base-uncased/')
+    parser.add_argument('--output_dir', type=str, default='./predictions/gatortron_mimiciii_ct_procedure_val/')
     args = parser.parse_args()
     return args
 
@@ -30,7 +30,8 @@ def get_pipeline(model_path, dataset_name):
         pipeline = TextClassificationPipeline(
                     model=pretrained_model,
                     tokenizer=tokenizer,
-                    top_k=None)
+                    top_k=None,
+                    batch_size=32,)
     return pipeline
 def load_data(fpaths):
     """
@@ -71,7 +72,7 @@ def main():
     data_files, text_col, label_col, id_col = get_data_files_by_task(args.dataset_name)
 
     dataset = load_data(data_files)
-    dataset = dataset['val'][:5]
+    dataset = dataset['val']
     
     predictions = pipeline(dataset[text_col])
     row_ids = dataset[id_col]
