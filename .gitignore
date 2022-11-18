@@ -130,5 +130,6 @@ dmypy.json
 
 # results
 results/*/
+inference/predictions/*
 # wandb
 fine_tuning/wandb/*
