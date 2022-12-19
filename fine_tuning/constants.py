@@ -1,4 +1,4 @@
-RADGRAPH_DIR = ''
+RADGRAPH_DIR = '/dataNAS/people/jmz/data/radgraph/1.0.0'
 RADSPRL_DIR = ''
 STANZA_NER_DIR = ''
 MIMIC_PROTOCOLING_DIR = '/dataNAS/people/jmz/data/mimic_autoprocedure_selection/'

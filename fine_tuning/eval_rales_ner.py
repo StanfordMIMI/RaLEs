@@ -5,6 +5,9 @@ Adapted from:
 transformers/examples/pytorch/token-classification/run_ner.py  (358478e)
 
 Changes:
+    -modified for command line support
+    -adapted for hyperparameter exploration with optuna
+    -added support for RaLEs datasets
     -adding specific path for cache
 """
 
@@ -51,11 +54,10 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
-from constants.py import TRANSFORMERS_DOWNLOAD_PATH
+from constants import TRANSFORMERS_DOWNLOAD_PATH, RADGRAPH_DIR
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.22.0.dev0")
-
 require_version("datasets>=1.8.0", "To fix: pip install -r examples/pytorch/token-classification/requirements.txt")
 
 logger = logging.getLogger(__name__)
@@ -183,6 +185,7 @@ class DataTrainingArguments:
                 "value if set."
             )
         },
+    )
     do_crossval: str = field(
         default=False,
         metadata={
@@ -216,7 +219,7 @@ class DataTrainingArguments:
         self.task_name = self.task_name.lower()
 
 
-def run_ner(config_mods=None):
+def run_ner(config_mods=None, eval_name=None, task=None):
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
@@ -237,7 +240,7 @@ def run_ner(config_mods=None):
 
     log_level = training_args.get_process_log_level()
     logger.setLevel(log_level)
-    datasets.utils.logging.set_verbosity(log_level)
+    
     transformers.utils.logging.set_verbosity(log_level)
     transformers.utils.logging.enable_default_handler()
     transformers.utils.logging.enable_explicit_format()
@@ -369,15 +372,10 @@ def run_ner(config_mods=None):
             use_auth_token=True if model_args.use_auth_token else None,
         )
 
-    model = AutoModelForTokenClassification.from_pretrained(
-        model_args.model_name_or_path,
-        from_tf=bool(".ckpt" in model_args.model_name_or_path),
-        config=config,
-        cache_dir=model_args.cache_dir,
-        revision=model_args.model_revision,
-        use_auth_token=True if model_args.use_auth_token else None,
-        ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
-    )
+
+
+    # def init_model():
+    #     return AutoModelForSequenceClassification.from_pretrained(config.model_name_or_path, cache_dir=config.cache_dir, num_labels=n_labels, label2id=label2id, id2label=id2label)
 
     # Tokenizer check: this script requires a fast tokenizer.
     if not isinstance(tokenizer, PreTrainedTokenizerFast):
@@ -388,26 +386,37 @@ def run_ner(config_mods=None):
         )
 
     # Model has labels -> use them.
-    if model.config.label2id != PretrainedConfig(num_labels=num_labels).label2id:
-        if list(sorted(model.config.label2id.keys())) == list(sorted(label_list)):
+    if config.label2id != PretrainedConfig(num_labels=num_labels).label2id:
+        if list(sorted(config.label2id.keys())) == list(sorted(label_list)):
             # Reorganize `label_list` to match the ordering of the model.
             if labels_are_int:
-                label_to_id = {i: int(model.config.label2id[l]) for i, l in enumerate(label_list)}
-                label_list = [model.config.id2label[i] for i in range(num_labels)]
+                label_to_id = {i: int(config.label2id[l]) for i, l in enumerate(label_list)}
+                label_list = [config.id2label[i] for i in range(num_labels)]
             else:
-                label_list = [model.config.id2label[i] for i in range(num_labels)]
+                label_list = [config.id2label[i] for i in range(num_labels)]
                 label_to_id = {l: i for i, l in enumerate(label_list)}
         else:
             logger.warning(
                 "Your model seems to have been trained with labels, but they don't match the dataset: ",
-                f"model labels: {list(sorted(model.config.label2id.keys()))}, dataset labels:"
+                f"model labels: {list(sorted(config.label2id.keys()))}, dataset labels:"
                 f" {list(sorted(label_list))}.\nIgnoring the model labels as a result.",
             )
 
     # Set the correspondences label/ID inside the model config
-    model.config.label2id = {l: i for i, l in enumerate(label_list)}
-    model.config.id2label = {i: l for i, l in enumerate(label_list)}
+    config.label2id = {l: i for i, l in enumerate(label_list)}
+    config.id2label = {i: l for i, l in enumerate(label_list)}
 
+    def model_init(): 
+        return AutoModelForTokenClassification.from_pretrained(
+            model_args.model_name_or_path,
+            from_tf=bool(".ckpt" in model_args.model_name_or_path),
+            config=config,
+            cache_dir=model_args.cache_dir,
+            revision=model_args.model_revision,
+            use_auth_token=True if model_args.use_auth_token else None,
+            ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
+        )
+        
     # Map that sends B-Xxx label to its I-Xxx counterpart
     b_to_i_label = []
     for idx, label in enumerate(label_list):
@@ -415,7 +424,7 @@ def run_ner(config_mods=None):
             b_to_i_label.append(label_list.index(label.replace("B-", "I-")))
         else:
             b_to_i_label.append(idx)
-
+    
     # Preprocessing the dataset
     # Padding strategy
     padding = "max_length" if data_args.pad_to_max_length else False
@@ -542,7 +551,7 @@ def run_ner(config_mods=None):
 
     # Initialize our Trainer
     trainer = Trainer(
-        model=model,
+        model_init=model_init,
         args=training_args,
         train_dataset=train_dataset if training_args.do_train else None,
         eval_dataset=eval_dataset if training_args.do_eval else None,
@@ -551,6 +560,19 @@ def run_ner(config_mods=None):
         compute_metrics=compute_metrics,
     )
 
+    def hp_space(trial):
+        """
+        formatted as optuna objective (see https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/002_configurations.html#sphx-glr-tutorial-10-key-features-002-configurations-py)
+        """
+        return {
+            "learning_rate": trial.suggest_float("learning_rate", 1e-5, 1e-4, log=True),
+            "num_train_epochs": trial.suggest_int("num_train_epochs", 3, 5),
+            "per_device_train_batch_size": trial.suggest_categorical("per_device_train_batch_size", [16, 32]),
+            "weight_decay": trial.suggest_float("weight_decay", 1e-12, 1e-1, log=True)
+        }
+
+    
+
     # Training
     if training_args.do_train:
         checkpoint = None
@@ -558,7 +580,13 @@ def run_ner(config_mods=None):
             checkpoint = training_args.resume_from_checkpoint
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
-        train_result = trainer.train(resume_from_checkpoint=checkpoint)
+        train_result = trainer.hyperparameter_search(
+                            direction='maximize',
+                            n_trials=10, 
+                            hp_space=hp_space,
+                            compute_objective= lambda metrics: metrics['eval_overall_f1'],
+                            study_name= f'{training_args.output_dir}_{eval_name}_{task}'
+                            )
         metrics = train_result.metrics
         trainer.save_model()  # Saves the tokenizer too for easy upload
 
@@ -583,28 +611,28 @@ def run_ner(config_mods=None):
         trainer.log_metrics("eval", metrics)
         trainer.save_metrics("eval", metrics)
 
-    # Predict
-    if training_args.do_predict:
-        logger.info("*** Predict ***")
+    # # Predict
+    # if training_args.do_predict:
+    #     logger.info("*** Predict ***")
 
-        predictions, labels, metrics = trainer.predict(predict_dataset, metric_key_prefix="predict")
-        predictions = np.argmax(predictions, axis=2)
+    #     predictions, labels, metrics = trainer.predict(predict_dataset, metric_key_prefix="predict")
+    #     predictions = np.argmax(predictions, axis=2)
 
-        # Remove ignored index (special tokens)
-        true_predictions = [
-            [label_list[p] for (p, l) in zip(prediction, label) if l != -100]
-            for prediction, label in zip(predictions, labels)
-        ]
+    #     # Remove ignored index (special tokens)
+    #     true_predictions = [
+    #         [label_list[p] for (p, l) in zip(prediction, label) if l != -100]
+    #         for prediction, label in zip(predictions, labels)
+    #     ]
 
-        trainer.log_metrics("predict", metrics)
-        trainer.save_metrics("predict", metrics)
+    #     trainer.log_metrics("predict", metrics)
+    #     trainer.save_metrics("predict", metrics)
 
-        # Save predictions
-        output_predictions_file = os.path.join(training_args.output_dir, "predictions.txt")
-        if trainer.is_world_process_zero():
-            with open(output_predictions_file, "w") as writer:
-                for prediction in true_predictions:
-                    writer.write(" ".join(prediction) + "\n")
+    #     # Save predictions
+    #     output_predictions_file = os.path.join(training_args.output_dir, "predictions.txt")
+    #     if trainer.is_world_process_zero():
+    #         with open(output_predictions_file, "w") as writer:
+    #             for prediction in true_predictions:
+    #                 writer.write(" ".join(prediction) + "\n")
 
     kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "token-classification"}
     if data_args.dataset_name is not None:
@@ -615,16 +643,48 @@ def run_ner(config_mods=None):
         else:
             kwargs["dataset"] = data_args.dataset_name
 
-    if training_args.push_to_hub:
-        trainer.push_to_hub(**kwargs)
-    else:
-        trainer.create_model_card(**kwargs)
+    
+    trainer.create_model_card(**kwargs)
 
+    # train_args = TrainingArguments(
+    #     output_dir=f'{config.output_dir}_{config.eval_name}_{task}',
+    #     overwrite_output_dir=True,
+    #     do_eval=True,
+    #     evaluation_strategy='epoch',
+    #     logging_strategy='epoch',
+    #     save_strategy='epoch',
+    #     save_total_limit=1,
+    #     load_best_model_at_end=True,
+    #     metric_for_best_model='f1_micro',
+    #     per_device_eval_batch_size=config.eval_batch_size,
+    # )
 
-def _mp_fn(index):
-    # For xla_spawn (TPUs)
-    run_ner()
+def do_ner_rales(task, config):
+    # add the model attributes to arguments for HF argparser compatibility
+    print(config)
+    
+    sys.argv = ['eval_rales_ner.py'] 
+    sys.argv += ['--model_name_or_path', config['model_name_or_path']]
+    sys.argv += ['--tokenizer_name', config['tokenizer_path']]
+    sys.argv += ['--cache_dir', config['cache_dir']]
+    sys.argv += ['--output_dir', os.path.join(config['output_dir'], config['eval_name']+'_'+task)]
+    
+    sys.argv += ['--evaluation_strategy', 'epoch']
+    sys.argv += ['--logging_strategy', 'epoch']
+    sys.argv += ['--save_strategy', 'epoch']
+    sys.argv += ['--load_best_model_at_end', 'True']
+    sys.argv += ['--metric_for_best_model', 'overall_f1']
+    sys.argv += ['--save_total_limit', '1']
 
+    sys.argv += ['--do_train', '--do_eval']
+    
+    if task == 'radgraph_ner':
+        train_file = os.path.join(RADGRAPH_DIR, 'train_jsonl.json')
+        validation_file = os.path.join(RADGRAPH_DIR, 'dev_jsonl.json')
+        sys.argv += ['--train_file', train_file]
+        sys.argv += ['--validation_file', validation_file]
+        
+        run_ner(eval_name=config['eval_name'], task=task)
 
 if __name__ == "__main__":
     run_ner()

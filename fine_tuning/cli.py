@@ -1,5 +1,6 @@
 from omegaconf import OmegaConf
 import argparse
+from eval_rales_ner import do_ner_rales
 from eval_rales_doc_classification import do_document_classification_rales
 
 def parse_config():
@@ -17,6 +18,7 @@ def main():
     if 'mimiciii_ct_procedure' in config.eval_datasets:
         config.dataset_text_col = 'indication'
         do_document_classification_rales(task='mimiciii_ct_procedure', config=config)
-
+    if 'radgraph_ner' in config.eval_datasets:
+        do_ner_rales(task='radgraph_ner', config=config)
 if __name__=='__main__':
     main()
