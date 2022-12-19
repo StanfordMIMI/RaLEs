@@ -7,6 +7,8 @@ import json
 from omegaconf import OmegaConf, dictconfig
 import evaluate
 from datasets import load_dataset
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 # from metrics import AccuracyAtK
 MIMIC_PROTOCOLING_DIR = '/dataNAS/people/jmz/data/mimic_autoprocedure_selection/' #TODO: fix relative import
 
@@ -65,6 +67,7 @@ def main():
     dataset = load_data(data_files)
     val_data_label_dict = dict(zip([str(x) for x in dataset['val']['ROW_ID']], dataset['val']['procedure_label']))
     label2idx = {label:idx for idx, label in enumerate(sorted(list(set(dataset['train']['procedure_label']))))}
+    idx2label = {idx:label for label, idx in label2idx.items()}
     
     # load predictions
     with open(args.predictions_fpath, 'r') as f:
@@ -74,9 +77,20 @@ def main():
     labels = [label2idx[val_data_label_dict[x]] for x in predictions.keys()]
     
     # evaluate
+    # accuracy at k
     accuracyatk = evaluate.load('./accuracyatk.py')
     for k in [1, 3, 5]:
         print(f'{accuracyatk.compute(predictions=predictions_formatted, references=labels, k=k)}')
+
+    # confusion matrix
+    # fig = plt.figure(figsize=(10,10))
+    # ConfusionMatrixDisplay.from_predictions(labels, [x.index(max(x)) for x in predictions_formatted], 
+    #                                     include_values=False, 
+    #                                     normalize='true', 
+    #                                     display_labels=[x[1] for x in sorted(zip(idx2label.keys(), idx2label.values()), key=lambda x: x[0])], 
+    #                                     xticks_rotation='vertical')#.plot(ax=fig.gca())
+    # plt.savefig('confusion_matrix.png')
+
 
 if __name__ == '__main__':
     main()
