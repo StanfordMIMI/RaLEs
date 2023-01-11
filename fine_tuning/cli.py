@@ -2,6 +2,7 @@ from omegaconf import OmegaConf
 import argparse
 from eval_rales_ner import do_ner_rales
 from eval_rales_doc_classification import do_document_classification_rales
+from eval_rales_re import do_re_rales
 
 def parse_config():
     parser = argparse.ArgumentParser(description='RaLEs Evaluation')
@@ -20,5 +21,7 @@ def main():
         do_document_classification_rales(task='mimiciii_ct_procedure', config=config)
     if 'radgraph_ner' in config.eval_datasets:
         do_ner_rales(task='radgraph_ner', config=config)
+    if 'radgraph_re' in config.eval_datasets:
+        do_re_rales(task='radgraph_re', config=config)
 if __name__=='__main__':
     main()

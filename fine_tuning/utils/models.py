@@ -1,8 +1,9 @@
-from huggingface import AutoModel
+from transformers import AutoModel
 
-class AutoModelForRE(BertPreTrainedModel):
+class AutoPLMarkerModelForRE(AutoModel):
     """
     adapted from https://github.com/thunlp/PL-Marker/blob/9eb7b09ed3ce1e06764559c054c3fd76f74aeabe/transformers/src/transformers/modeling_bert.py
+    (class BertForACEBothOneDropoutSub) 
     """
     def __init__(self, config, base_name):
         super().__init__(config)

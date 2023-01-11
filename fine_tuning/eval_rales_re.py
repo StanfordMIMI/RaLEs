@@ -51,9 +51,9 @@ from transformers import (WEIGHTS_NAME, BertConfig,
                                   AlbertConfig,
                                   AlbertTokenizer,
                                   )
-from utils.models import AutoModelForRE
+from utils.models import AutoPLMarkerModelForRE
 
-from transformers import AutoTokenizer
+from transformers import AutoConfig, AutoTokenizer
 from torch.utils.data import TensorDataset, Dataset
 import json
 import pickle
@@ -61,402 +61,30 @@ import numpy as np
 import unicodedata
 import itertools
 import timeit
-
+import sys
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
+from constants import TRANSFORMERS_DOWNLOAD_PATH, RADGRAPH_DIR
 
-
-ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys()) for conf in (BertConfig,  AlbertConfig)), ())
+# ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys()) for conf in (BertConfig,  AlbertConfig)), ())
 
 MODEL_CLASSES = {
-    'bertsub': (BertConfig, BertForACEBothOneDropoutSub, BertTokenizer),
-    'bertnonersub': (BertConfig, BertForACEBothOneDropoutSubNoNer, BertTokenizer),
-    'albertsub': (AlbertConfig, AlbertForACEBothOneDropoutSub, AlbertTokenizer),
+    # 'bertsub': (BertConfig, BertForACEBothOneDropoutSub, BertTokenizer),
+    # 'bertnonersub': (BertConfig, BertForACEBothOneDropoutSubNoNer, BertTokenizer),
+    # 'albertsub': (AlbertConfig, AlbertForACEBothOneDropoutSub, AlbertTokenizer),
+    'auto': (AutoConfig, AutoPLMarkerModelForRE, AutoTokenizer),
 }
 
 task_ner_labels = {
-    'radsprl': ['FAC', 'WEA', 'LOC', 'VEH', 'GPE', 'ORG', 'PER'],
-    'radgraph': ['FAC', 'WEA', 'LOC', 'VEH', 'GPE', 'ORG', 'PER'],
+    'radsprl': [''],
+    'radgraph': ['ANAT-DP','OBS-DA','OBS-DP','OBS-U'],
 }
 
 task_rel_labels = {
     'radgraph': ['PER-SOC', 'OTHER-AFF', 'ART', 'GPE-AFF', 'EMP-ORG', 'PHYS'],
-    'radsprl': ['PER-SOC', 'ART', 'ORG-AFF', 'GEN-AFF', 'PHYS', 'PART-WHOLE'],
+    'radsprl': ['located_at','suggestive_of','modify'],
 }
-
-class REDataset(Dataset):
-    def __init__(self, tokenizer, args=None, evaluate=False, do_test=False, max_pair_length=None):
-
-        if not evaluate:
-            file_path = os.path.join(args.data_dir, args.train_file)
-        else:
-            if do_test:
-                if args.test_file.find('models')==-1:
-                    file_path = os.path.join(args.data_dir, args.test_file)
-                else:
-                    file_path = args.test_file
-            else:
-                if args.dev_file.find('models')==-1:
-                    file_path = os.path.join(args.data_dir, args.dev_file)
-                else:
-                    file_path = args.dev_file
-
-        assert os.path.isfile(file_path)
-
-        self.file_path = file_path
-                
-        self.tokenizer = tokenizer
-        self.max_seq_length = args.max_seq_length
-        self.max_pair_length = max_pair_length
-        self.max_entity_length = self.max_pair_length*2
-
-        self.evaluate = evaluate
-        self.use_typemarker = args.use_typemarker
-        self.local_rank = args.local_rank
-        self.args = args
-        self.model_type = args.model_type
-        self.no_sym = args.no_sym
-
-        if args.data_dir.find('ace05')!=-1:
-            self.ner_label_list = ['NIL', 'FAC', 'WEA', 'LOC', 'VEH', 'GPE', 'ORG', 'PER']
-
-            if args.no_sym:
-                label_list = ['PER-SOC', 'ART', 'ORG-AFF', 'GEN-AFF', 'PHYS', 'PART-WHOLE']
-                self.sym_labels = ['NIL']
-                self.label_list = self.sym_labels + label_list
-            else:
-                label_list = ['ART', 'ORG-AFF', 'GEN-AFF', 'PHYS',  'PART-WHOLE']
-                self.sym_labels = ['NIL', 'PER-SOC']
-                self.label_list = self.sym_labels + label_list
-
-        elif args.data_dir.find('ace04')!=-1:
-            self.ner_label_list = ['NIL', 'FAC', 'WEA', 'LOC', 'VEH', 'GPE', 'ORG', 'PER']
-
-            if args.no_sym:
-                label_list = ['PER-SOC', 'OTHER-AFF', 'ART', 'GPE-AFF', 'EMP-ORG', 'PHYS']
-                self.sym_labels = ['NIL']
-                self.label_list = self.sym_labels + label_list
-            else:
-                label_list = ['OTHER-AFF', 'ART', 'GPE-AFF', 'EMP-ORG', 'PHYS']
-                self.sym_labels = ['NIL', 'PER-SOC']
-                self.label_list = self.sym_labels + label_list
-
-        elif args.data_dir.find('scierc')!=-1:      
-            self.ner_label_list = ['NIL', 'Method', 'OtherScientificTerm', 'Task', 'Generic', 'Material', 'Metric']
-
-            if args.no_sym:
-                label_list = ['CONJUNCTION', 'COMPARE', 'PART-OF', 'USED-FOR', 'FEATURE-OF',  'EVALUATE-FOR', 'HYPONYM-OF']
-                self.sym_labels = ['NIL']
-                self.label_list = self.sym_labels + label_list
-            else:
-                label_list = ['PART-OF', 'USED-FOR', 'FEATURE-OF',  'EVALUATE-FOR', 'HYPONYM-OF']
-                self.sym_labels = ['NIL', 'CONJUNCTION', 'COMPARE']
-                self.label_list = self.sym_labels + label_list
-
-        else:
-            assert (False)  
-
-        self.global_predicted_ners = {}
-        self.initialize()
- 
-    def initialize(self):
-        tokenizer = self.tokenizer
-        vocab_size = tokenizer.vocab_size
-        max_num_subwords = self.max_seq_length - 4  # for two marker
-        label_map = {label: i for i, label in enumerate(self.label_list)}
-        ner_label_map = {label: i for i, label in enumerate(self.ner_label_list)}
-
-        def tokenize_word(text):
-            if (
-                isinstance(tokenizer, RobertaTokenizer)
-                and (text[0] != "'")
-                and (len(text) != 1 or not self.is_punctuation(text))
-            ):
-                return tokenizer.tokenize(text, add_prefix_space=True)
-            return tokenizer.tokenize(text)
-
-        f = open(self.file_path, "r", encoding='utf-8')
-        self.ner_tot_recall = 0
-        self.tot_recall = 0
-        self.data = []
-        self.ner_golden_labels = set([])
-        self.golden_labels = set([])
-        self.golden_labels_withner = set([])
-        maxR = 0
-        maxL = 0
-        for l_idx, line in enumerate(f):
-            data = json.loads(line)
-
-            if self.args.output_dir.find('test')!=-1:
-                if len(self.data) > 100:
-                    break
-
-            sentences = data['sentences']
-            if 'predicted_ner' in data:       # e2e predict
-               ners = data['predicted_ner']               
-            else:
-               ners = data['ner']
-
-            std_ners = data['ner']
-
-            relations = data['relations']
-
-            for sentence_relation in relations:
-                for x in sentence_relation:
-                    if x[4] in self.sym_labels[1:]:
-                        self.tot_recall += 2
-                    else: 
-                        self.tot_recall +=  1
-
-            sentence_boundaries = [0]
-            words = []
-            L = 0
-            for i in range(len(sentences)):
-                L += len(sentences[i])
-                sentence_boundaries.append(L)
-                words += sentences[i]
-
-            tokens = [tokenize_word(w) for w in words]
-            subwords = [w for li in tokens for w in li]
-            maxL = max(maxL, len(subwords))
-            subword2token = list(itertools.chain(*[[i] * len(li) for i, li in enumerate(tokens)]))
-            token2subword = [0] + list(itertools.accumulate(len(li) for li in tokens))
-            subword_start_positions = frozenset(token2subword)
-            subword_sentence_boundaries = [sum(len(li) for li in tokens[:p]) for p in sentence_boundaries]
-
-            for n in range(len(subword_sentence_boundaries) - 1):
-
-                sentence_ners = ners[n]
-                sentence_relations = relations[n]
-                std_ner = std_ners[n]
-
-                std_entity_labels = {}
-                self.ner_tot_recall += len(std_ner)
-
-                for start, end, label in std_ner:
-                    std_entity_labels[(start, end)] = label
-                    self.ner_golden_labels.add( ((l_idx, n), (start, end), label) )
-
-                self.global_predicted_ners[(l_idx, n)] = list(sentence_ners)
-
-                doc_sent_start, doc_sent_end = subword_sentence_boundaries[n : n + 2]
-
-                left_length = doc_sent_start
-                right_length = len(subwords) - doc_sent_end
-                sentence_length = doc_sent_end - doc_sent_start
-                half_context_length = int((max_num_subwords - sentence_length) / 2)
-
-                if sentence_length < max_num_subwords:
-
-                    if left_length < right_length:
-                        left_context_length = min(left_length, half_context_length)
-                        right_context_length = min(right_length, max_num_subwords - left_context_length - sentence_length)
-                    else:
-                        right_context_length = min(right_length, half_context_length)
-                        left_context_length = min(left_length, max_num_subwords - right_context_length - sentence_length)
-
-
-                doc_offset = doc_sent_start - left_context_length
-                target_tokens = subwords[doc_offset : doc_sent_end + right_context_length]
-                target_tokens = [tokenizer.cls_token] + target_tokens[ : self.max_seq_length - 4] + [tokenizer.sep_token] 
-                assert(len(target_tokens) <= self.max_seq_length - 2)
-                
-                pos2label = {}
-                for x in sentence_relations:
-                    pos2label[(x[0],x[1],x[2],x[3])] = label_map[x[4]]
-                    self.golden_labels.add(((l_idx, n), (x[0],x[1]), (x[2],x[3]), x[4]))
-                    self.golden_labels_withner.add(((l_idx, n), (x[0],x[1], std_entity_labels[(x[0], x[1])]), (x[2],x[3], std_entity_labels[(x[2], x[3])]), x[4]))
-                    if x[4] in self.sym_labels[1:]:
-                        self.golden_labels.add(((l_idx, n),  (x[2],x[3]), (x[0],x[1]), x[4]))
-                        self.golden_labels_withner.add(((l_idx, n), (x[2],x[3], std_entity_labels[(x[2], x[3])]), (x[0],x[1], std_entity_labels[(x[0], x[1])]), x[4]))
-
-                entities = list(sentence_ners)
-
-                for x in sentence_relations:
-                    w = (x[2],x[3],x[0],x[1])
-                    if w not in pos2label:
-                        if x[4] in self.sym_labels[1:]:
-                            pos2label[w] = label_map[x[4]]  # bug
-                        else:
-                            pos2label[w] = label_map[x[4]] + len(label_map) - len(self.sym_labels)
-
-                if not self.evaluate:
-                    entities.append((10000, 10000, 'NIL')) # only for NER
-
-                for sub in entities:    
-                    cur_ins = []
-
-                    if sub[0] < 10000:
-                        sub_s = token2subword[sub[0]] - doc_offset + 1
-                        sub_e = token2subword[sub[1]+1] - doc_offset
-                        sub_label = ner_label_map[sub[2]]
-
-                        if self.use_typemarker:
-                            l_m = '[unused%d]' % ( 2 + sub_label )
-                            r_m = '[unused%d]' % ( 2 + sub_label + len(self.ner_label_list) )
-                        else:
-                            l_m = '[unused0]'
-                            r_m = '[unused1]'
-                        
-                        sub_tokens = target_tokens[:sub_s] + [l_m] + target_tokens[sub_s:sub_e+1] + [r_m] + target_tokens[sub_e+1: ]
-                        sub_e += 2
-                    else:
-                        sub_s = len(target_tokens)
-                        sub_e = len(target_tokens)+1
-                        sub_tokens = target_tokens + ['[unused0]',  '[unused1]']
-                        sub_label = -1
-
-                    if sub_e >= self.max_seq_length-1:
-                        continue
-                    # assert(sub_e < self.max_seq_length)
-                    for start, end, obj_label in sentence_ners:
-                        if self.model_type.endswith('nersub'):
-                            if start==sub[0] and end==sub[1]:
-                                continue
-
-                        doc_entity_start = token2subword[start]
-                        doc_entity_end = token2subword[end+1]
-                        left = doc_entity_start - doc_offset + 1
-                        right = doc_entity_end - doc_offset
-
-                        obj = (start, end)
-                        if obj[0] >= sub[0]:
-                            left += 1
-                            if obj[0] > sub[1]:
-                                left += 1
-
-                        if obj[1] >= sub[0]:   
-                            right += 1
-                            if obj[1] > sub[1]:
-                                right += 1
-    
-                        label = pos2label.get((sub[0], sub[1], obj[0], obj[1]), 0)
-
-                        if right >= self.max_seq_length-1:
-                            continue
-
-                        cur_ins.append(((left, right, ner_label_map[obj_label]), label, obj))
-
-
-                    maxR = max(maxR, len(cur_ins))
-                    dL = self.max_pair_length
-                    if self.args.shuffle:
-                        np.random.shuffle(cur_ins)
-
-                    for i in range(0, len(cur_ins), dL):
-                        examples = cur_ins[i : i + dL]
-                        item = {
-                            'index': (l_idx, n),
-                            'sentence': sub_tokens,
-                            'examples': examples,
-                            'sub': (sub, (sub_s, sub_e), sub_label), #(sub[0], sub[1], sub_label),
-                        }                
-                        
-                        self.data.append(item)                    
-        logger.info('maxR: %s', maxR)
-        logger.info('maxL: %s', maxL)
-                
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        entry = self.data[idx]
-        sub, sub_position, sub_label = entry['sub']
-        input_ids = self.tokenizer.convert_tokens_to_ids(entry['sentence'])
-
-        L = len(input_ids)
-        input_ids += [self.tokenizer.pad_token_id] * (self.max_seq_length - len(input_ids))
-
-        attention_mask = torch.zeros((self.max_entity_length+self.max_seq_length, self.max_entity_length+self.max_seq_length), dtype=torch.int64)
-        attention_mask[:L, :L] = 1
-        
-        if self.model_type.startswith('albert'):
-            input_ids = input_ids + [30002] * (len(entry['examples'])) + [self.tokenizer.pad_token_id] * (self.max_pair_length - len(entry['examples']))
-            input_ids = input_ids + [30003] * (len(entry['examples'])) + [self.tokenizer.pad_token_id] * (self.max_pair_length - len(entry['examples'])) # for debug
-        else:
-            input_ids = input_ids + [3] * (len(entry['examples'])) + [self.tokenizer.pad_token_id] * (self.max_pair_length - len(entry['examples']))
-            input_ids = input_ids + [4] * (len(entry['examples'])) + [self.tokenizer.pad_token_id] * (self.max_pair_length - len(entry['examples'])) # for debug
-
-        labels = []
-        ner_labels = []
-        mention_pos = []
-        mention_2 = []
-        position_ids = list(range(self.max_seq_length)) + [0] * self.max_entity_length 
-        num_pair = self.max_pair_length
-
-        for x_idx, obj in enumerate(entry['examples']):
-            m2 = obj[0]
-            label = obj[1]
-
-            mention_pos.append((m2[0], m2[1]))
-            mention_2.append(obj[2])
-
-            w1 = x_idx  
-            w2 = w1 + num_pair
-
-            w1 += self.max_seq_length
-            w2 += self.max_seq_length
-            
-            position_ids[w1] = m2[0]
-            position_ids[w2] = m2[1]
-
-            for xx in [w1, w2]:
-                for yy in [w1, w2]:
-                    attention_mask[xx, yy] = 1
-                attention_mask[xx, :L] = 1
-
-            labels.append(label)
-            ner_labels.append(m2[2])
-
-            if self.use_typemarker:
-                l_m = '[unused%d]' % ( 2 + m2[2] + len(self.ner_label_list)*2 )
-                r_m = '[unused%d]' % ( 2 + m2[2] + len(self.ner_label_list)*3 )
-                l_m = self.tokenizer._convert_token_to_id(l_m)
-                r_m = self.tokenizer._convert_token_to_id(r_m)
-                input_ids[w1] = l_m
-                input_ids[w2] = r_m
-
-
-        pair_L = len(entry['examples'])
-        if self.args.att_left:
-            attention_mask[self.max_seq_length : self.max_seq_length+pair_L, self.max_seq_length : self.max_seq_length+pair_L] = 1
-        if self.args.att_right:
-            attention_mask[self.max_seq_length+num_pair : self.max_seq_length+num_pair+pair_L, self.max_seq_length+num_pair : self.max_seq_length+num_pair+pair_L] = 1
-
-        mention_pos += [(0, 0)] * (num_pair - len(mention_pos))
-        labels += [-1] * (num_pair - len(labels))
-        ner_labels += [-1] * (num_pair - len(ner_labels))
-
-        item = [torch.tensor(input_ids),
-                attention_mask,
-                torch.tensor(position_ids),
-                torch.tensor(sub_position),
-                torch.tensor(mention_pos),
-                torch.tensor(labels, dtype=torch.int64),
-                torch.tensor(ner_labels, dtype=torch.int64),
-                torch.tensor(sub_label, dtype=torch.int64)
-        ]
-
-        if self.evaluate:
-            item.append(entry['index'])
-            item.append(sub)
-            item.append(mention_2)
-
-        return item
-
-    @staticmethod
-    def collate_fn(batch):
-        fields = [x for x in zip(*batch)]
-
-        num_metadata_fields = 3
-        stacked_fields = [torch.stack(field) for field in fields[:-num_metadata_fields]]  # don't stack metadata fields
-        stacked_fields.extend(fields[-num_metadata_fields:])  # add them as lists not torch tensors
-
-        return stacked_fields
-
- 
-
 
 def set_seed(args):
     random.seed(args.seed)
@@ -502,7 +130,7 @@ def train(args, model, tokenizer):
 
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
 
-    train_dataset = ACEDataset(tokenizer=tokenizer, args=args, max_pair_length=args.max_pair_length)
+    train_dataset = RadGraphREDataset(tokenizer=tokenizer, args=args, max_pair_length=args.max_pair_length)
 
     train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
     train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size, num_workers=4*int(args.output_dir.find('test')==-1))
@@ -693,7 +321,7 @@ def evaluate(args, model, tokenizer, prefix="", do_test=False):
 
     eval_output_dir = args.output_dir
 
-    eval_dataset = ACEDataset(tokenizer=tokenizer, args=args, evaluate=True, do_test=do_test, max_pair_length=args.max_pair_length)
+    eval_dataset = RadGraphREDataset(tokenizer=tokenizer, args=args, evaluate=True, do_test=do_test, max_pair_length=args.max_pair_length)
     golden_labels = set(eval_dataset.golden_labels)
     golden_labels_withner = set(eval_dataset.golden_labels_withner)
     label_list = list(eval_dataset.label_list)
@@ -717,7 +345,7 @@ def evaluate(args, model, tokenizer, prefix="", do_test=False):
     model.eval()
 
     eval_sampler = SequentialSampler(eval_dataset) 
-    eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size,  collate_fn=ACEDataset.collate_fn, num_workers=4*int(args.output_dir.find('test')==-1))
+    eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size,  collate_fn=RadGraphREDataset.collate_fn, num_workers=4*int(args.output_dir.find('test')==-1))
 
     # Eval!
     logger.info("  Num examples = %d", len(eval_dataset))
@@ -1018,16 +646,14 @@ def evaluate(args, model, tokenizer, prefix="", do_test=False):
 
 
 
-def main():
+def run_re(eval_name='', task=''):
     parser = argparse.ArgumentParser()
 
     ## Required parameters
-    parser.add_argument("--data_dir", default='ace_data', type=str, required=True,
-                        help="The input data dir. Should contain the .tsv files (or other data files) for the task.")
-    parser.add_argument("--model_type", default=None, type=str, required=True,
+    parser.add_argument("--model_type", default='auto', type=str, required=True,
                         help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys()))
     parser.add_argument("--model_name_or_path", default=None, type=str, required=True,
-                        help="Path to pre-trained model or shortcut name selected in the list: " + ", ".join(ALL_MODELS))
+                        help="Path to pre-trained model")
     parser.add_argument("--output_dir", default=None, type=str, required=True,
                         help="The output directory where the model predictions and checkpoints will be written.")
 
@@ -1092,8 +718,6 @@ def main():
     parser.add_argument('--fp16_opt_level', type=str, default='O1',
                         help="For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']."
                              "See details at https://nvidia.github.io/apex/amp.html")
-    parser.add_argument("--local_rank", type=int, default=-1,
-                        help="For distributed training: local_rank")
     parser.add_argument('--server_ip', type=str, default='', help="For distant debugging.")
     parser.add_argument('--server_port', type=str, default='', help="For distant debugging.")
     parser.add_argument('--save_total_limit', type=int, default=1,
@@ -1136,8 +760,8 @@ def main():
                 dst_file = os.path.join(path, 'scripts', os.path.basename(script))
                 shutil.copyfile(script, dst_file)
 
-    if args.do_train and args.local_rank in [-1, 0] and args.output_dir.find('test')==-1:
-        create_exp_dir(args.output_dir, scripts_to_save=['run_re.py', 'transformers/src/transformers/modeling_bert.py', 'transformers/src/transformers/modeling_albert.py'])
+    # if args.do_train and args.local_rank in [-1, 0] and args.output_dir.find('test')==-1:
+    #     create_exp_dir(args.output_dir, scripts_to_save=['run_re.py', 'transformers/src/transformers/modeling_bert.py', 'transformers/src/transformers/modeling_albert.py'])
 
 
     # Setup distant debugging if needed
@@ -1149,51 +773,40 @@ def main():
         ptvsd.wait_for_attach()
 
     # Setup CUDA, GPU & distributed training
-    if args.local_rank == -1 or args.no_cuda:
-        device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
-        args.n_gpu = torch.cuda.device_count()
-    else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
-        torch.cuda.set_device(args.local_rank)
-        device = torch.device("cuda", args.local_rank)
-        torch.distributed.init_process_group(backend='nccl')
-        args.n_gpu = 1
+    # if args.local_rank == -1 or args.no_cuda:
+    device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
+    args.n_gpu = torch.cuda.device_count()
+    # else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
+    #     torch.cuda.set_device(args.local_rank)
+    #     device = torch.device("cuda", args.local_rank)
+    #     torch.distributed.init_process_group(backend='nccl')
+    #     args.n_gpu = 1
     args.device = device
 
     # Setup logging
     logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
                         datefmt = '%m/%d/%Y %H:%M:%S',
-                        level = logging.INFO if args.local_rank in [-1, 0] else logging.WARN)
-    logger.warning("Process rank: %s, device: %s, n_gpu: %s, distributed training: %s, 16-bits training: %s",
-                    args.local_rank, device, args.n_gpu, bool(args.local_rank != -1), args.fp16)
+                        level = logging.INFO) # logging.INFO if args.local_rank in [-1, 0] else
+    # logger.warning("Process rank: %s, device: %s, n_gpu: %s, distributed training: %s, 16-bits training: %s",
+    #                 args.local_rank, device, args.n_gpu, bool(args.local_rank != -1), args.fp16)
 
     # Set seed
     set_seed(args)
 
-    if args.data_dir.find('ace')!=-1:
-        num_ner_labels = 8
-
-        if args.no_sym:
-            num_labels = 7 + 7 - 1
-        else:
-            num_labels = 7 + 7 - 2
-    elif args.data_dir.find('scierc')!=-1:
-        num_ner_labels = 7
-
-        if args.no_sym:
-            num_labels = 8 + 8 - 1
-        else:
-            num_labels = 8 + 8 - 3
+    if task == 'radgraph':
+        num_ner_labels = 4
+        num_lables = 4
+    elif task == 'radsprl':
+        num_ner_labels = 4
+        num_labels = 4
     else:
         assert (False)
 
     # Load pretrained model and tokenizer
-    if args.local_rank not in [-1, 0]:
-        torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
-
-
+    
     args.model_type = args.model_type.lower()
 
-    config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
+    config_class, model_class, tokenizer_class = MODEL_CLASSES['auto']#MODEL_CLASSES[args.model_type]
 
     config = config_class.from_pretrained(args.config_name if args.config_name else args.model_name_or_path, num_labels=num_labels)
     tokenizer = tokenizer_class.from_pretrained(args.model_name_or_path,  do_lower_case=args.do_lower_case)
@@ -1329,6 +942,32 @@ def main():
         output_eval_file = os.path.join(args.output_dir, "results.json")
         json.dump(results, open(output_eval_file, "w"))
 
+def do_re_rales(task, config):
+    # add the model attributes to arguments for HF argparser compatibility
+    print(config)
+    
+    sys.argv = ['eval_rales_re.py'] 
+    sys.argv += ['--model_name_or_path', config['model_name_or_path']]
+    sys.argv += ['--tokenizer_name', config['tokenizer_path']]
+    sys.argv += ['--cache_dir', config['cache_dir']]
+    sys.argv += ['--output_dir', os.path.join(config['output_dir'], config['eval_name']+'_'+task)]
+    
+    sys.argv += ['--evaluation_strategy', 'epoch']
+    sys.argv += ['--logging_strategy', 'epoch']
+    sys.argv += ['--save_strategy', 'epoch']
+    sys.argv += ['--load_best_model_at_end', 'True']
+    sys.argv += ['--metric_for_best_model', 'overall_f1']
+    sys.argv += ['--save_total_limit', '1']
+
+    sys.argv += ['--do_train', '--do_eval']
+    
+    if task == 'radgraph_re':
+        train_file = os.path.join(RADGRAPH_DIR, 'train_plmarker_jsonl.json')
+        validation_file = os.path.join(RADGRAPH_DIR, 'dev_plmarker_jsonl.json')
+        sys.argv += ['--train_file', train_file]
+        sys.argv += ['--dev_file', validation_file]
+        
+        run_re(eval_name=config['eval_name'], task=task)
 
 if __name__ == "__main__":
-    main()
+    run_re()
