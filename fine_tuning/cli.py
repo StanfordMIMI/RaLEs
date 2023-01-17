@@ -21,7 +21,7 @@ def main():
         do_document_classification_rales(task='mimiciii_ct_procedure', config=config)
     if 'radgraph_ner' in config.eval_datasets:
         do_ner_rales(task='radgraph_ner', config=config)
-    if 'radgraph_re' in config.eval_datasets:
-        do_re_rales(task='radgraph_re', config=config)
+    if 'stanza_ner' in config.eval_datasets:
+        do_ner_rales(task='stanza_ner', config=config)
 if __name__=='__main__':
     main()

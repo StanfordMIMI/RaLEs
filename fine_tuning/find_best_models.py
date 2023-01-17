@@ -5,10 +5,11 @@ import os
 import transformers
 import json
 import argparse
+import pandas as pd
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--results_dir', type=str, default='../results/classification/')
+    parser.add_argument('--results_dir', type=str, default='../results/ner/')
     parser.add_argument('--output_dir', type=str, default='./classification/')
     args = parser.parse_args()
     return args
@@ -86,7 +87,11 @@ def main():
 
     # get best results
     best_results = get_best_results(args.results_dir, exp_name='mimiciii_ct_procedure')
-    print(best_results)
+    pd.DataFrame(best_results).T.to_csv('../results/best_results_procedure.csv')
+    # best_results = get_best_results(args.results_dir, exp_name='stanza')
+    # pd.DataFrame(best_results).T.to_csv('../results/best_results_stanza.csv')
+    
+    print()
 
 
 if __name__=='__main__':
