@@ -54,7 +54,7 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
-from constants import TRANSFORMERS_DOWNLOAD_PATH, RADGRAPH_DIR
+from constants import TRANSFORMERS_DOWNLOAD_PATH, RADGRAPH_DIR, STANZA_DIR
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.22.0.dev0")
@@ -587,7 +587,7 @@ def run_ner(config_mods=None, eval_name=None, task=None):
                             compute_objective= lambda metrics: metrics['eval_overall_f1'],
                             study_name= f'{training_args.output_dir}_{eval_name}_{task}'
                             )
-        metrics = train_result.metrics
+        metrics = train_result
         trainer.save_model()  # Saves the tokenizer too for easy upload
 
         max_train_samples = (
@@ -681,6 +681,13 @@ def do_ner_rales(task, config):
     if task == 'radgraph_ner':
         train_file = os.path.join(RADGRAPH_DIR, 'train_jsonl.json')
         validation_file = os.path.join(RADGRAPH_DIR, 'dev_jsonl.json')
+        sys.argv += ['--train_file', train_file]
+        sys.argv += ['--validation_file', validation_file]
+        
+        run_ner(eval_name=config['eval_name'], task=task)
+    if task == 'stanza_ner':
+        train_file = os.path.join(STANZA_DIR, 'train.json')
+        validation_file = os.path.join(STANZA_DIR, 'dev.json')
         sys.argv += ['--train_file', train_file]
         sys.argv += ['--validation_file', validation_file]
         
