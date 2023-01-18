@@ -12,6 +12,14 @@ import matplotlib.pyplot as plt
 # from metrics import AccuracyAtK
 MIMIC_PROTOCOLING_DIR = '/dataNAS/people/jmz/data/mimic_autoprocedure_selection/' #TODO: fix relative import
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--predictions_fpath', type=str, default='../inference/predictions/gatortron_mimiciii_ct_procedure_val/predictions.json')
+    parser.add_argument('--dataset_name', type=str, default='mimiciii_ct_procedure')
+    parser.add_argument('--data_split', type=str, default='val')
+    args = parser.parse_args()
+    return args
+
 def load_data(fpaths):
     """
     TODO: import from fine-tuning script instead
@@ -44,13 +52,6 @@ def get_data_files_by_task(task):
     else:
         raise NotImplementedError('Loading data from {} is not implemented'.format(task))
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--predictions_fpath', type=str, default='../inference/predictions/gatortron_mimiciii_ct_procedure_val/predictions.json')
-    parser.add_argument('--dataset_name', type=str, default='mimiciii_ct_procedure')
-    args = parser.parse_args()
-    return args
-
 def order_predictions(predictions, label2idx):
     """
     Returns ordered predictions from a list of {'label': str, 'score': float} and a label2idx dict
@@ -65,7 +66,8 @@ def main():
     # load dataset
     data_files, text_col, label_col, id_col = get_data_files_by_task(args.dataset_name)
     dataset = load_data(data_files)
-    val_data_label_dict = dict(zip([str(x) for x in dataset['val']['ROW_ID']], dataset['val']['procedure_label']))
+    data_label_dict = dict(zip([str(x) for x in dataset[args.data_split]['ROW_ID']], dataset[args.data_split]['procedure_label']))
+    
     label2idx = {label:idx for idx, label in enumerate(sorted(list(set(dataset['train']['procedure_label']))))}
     idx2label = {idx:label for label, idx in label2idx.items()}
     
@@ -74,13 +76,18 @@ def main():
         predictions = json.load(f)
     
     predictions_formatted = [order_predictions(predictions[x], label2idx) for x in predictions.keys()]
-    labels = [label2idx[val_data_label_dict[x]] for x in predictions.keys()]
+    labels = [label2idx[data_label_dict[x]] for x in predictions.keys()]
+    
+    eval_name = args.predictions_fpath.split('/')[-2]
     
     # evaluate
     # accuracy at k
     accuracyatk = evaluate.load('./accuracyatk.py')
+    metrics = {}
+    metrics[eval_name] = {}
     for k in [1, 3, 5]:
-        print(f'{accuracyatk.compute(predictions=predictions_formatted, references=labels, k=k)}')
+        metrics[eval_name][f'accuracyatk{k}'] = accuracyatk.compute(predictions=predictions_formatted, references=labels, k=k)[f'accuracyat{k}']
+    print(metrics)
 
     # confusion matrix
     # fig = plt.figure(figsize=(10,10))
