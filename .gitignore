@@ -133,3 +133,8 @@ results/*/
 inference/predictions/*
 # wandb
 fine_tuning/wandb/*
+*/wandb/*
+*/tmp_trainer/*
+
+*/__pycache__/*
+*/*/__pycache__/*
