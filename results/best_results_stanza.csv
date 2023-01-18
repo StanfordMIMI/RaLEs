@@ -1,0 +1,17 @@
+,best_metric,best_subdir
+radbert1_stanza_stanza_ner,83.61%,../results/ner/radbert1_stanza_stanza_ner/run-6/checkpoint-770
+debertav3base_stanza_stanza_ner,84.75%,../results/ner/debertav3base_stanza_stanza_ner/run-8/checkpoint-616
+electralarge_stanza_stanza_ner,83.68%,../results/ner/electralarge_stanza_stanza_ner/run-5/checkpoint-308
+electrabase_stanza_stanza_ner,85.46%,../results/ner/electrabase_stanza_stanza_ner/run-6/checkpoint-770
+radbert2_stanza_stanza_ner,83.84%,../results/ner/radbert2_stanza_stanza_ner/run-9/checkpoint-770
+debertav3large_stanza_stanza_ner,85.73%,../results/ner/debertav3large_stanza_stanza_ner/run-6/checkpoint-385
+robertabase_stanza_stanza_ner,81.72%,../results/ner/robertabase_stanza_stanza_ner/run-7/checkpoint-616
+electrasmall_stanza_stanza_ner,73.75%,../results/ner/electrasmall_stanza_stanza_ner/run-1/checkpoint-770
+pubmedbert_stanza_stanza_ner,83.78%,../results/ner/pubmedbert_stanza_stanza_ner/run-9/checkpoint-616
+biolinkbertlarge_stanza_stanza_ner,83.82%,../results/ner/biolinkbertlarge_stanza_stanza_ner/run-3/checkpoint-462
+bertbase_stanza_stanza_ner,83.58%,../results/ner/bertbase_stanza_stanza_ner/run-0/checkpoint-770
+gatortron_stanza_stanza_ner,84.18%,../results/ner/gatortron_stanza_stanza_ner/run-7/checkpoint-385
+biolinkbertbase_stanza_stanza_ner,84.47%,../results/ner/biolinkbertbase_stanza_stanza_ner/run-4/checkpoint-616
+robertalarge_stanza_stanza_ner,84.61%,../results/ner/robertalarge_stanza_stanza_ner/run-3/checkpoint-308
+bertlarge_stanza_stanza_ner,84.05%,../results/ner/bertlarge_stanza_stanza_ner/run-0/checkpoint-308
+bioclinicalbert_stanza_stanza_ner,83.53%,../results/ner/bioclinicalbert_stanza_stanza_ner/run-1/checkpoint-616
