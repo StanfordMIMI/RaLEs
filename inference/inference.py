@@ -12,22 +12,14 @@ from omegaconf import OmegaConf, dictconfig
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SequentialSampler
-<<<<<<< HEAD
 import torch.nn.functional as F
-=======
->>>>>>> dc37c4c (inference best models stanza, procedure)
 import evaluate
 import json
 import numpy as np
 from transformers.trainer_pt_utils import nested_concat
 
-<<<<<<< HEAD
 MIMIC_PROTOCOLING_DIR = '/PATH_TO//data/mimic_autoprocedure_selection/' #TODO: fix relative import
 STANZA_DIR = '/PATH_TO//data/radiology_NER/Radiology-NER/' #TODO: fix relative import
-=======
-MIMIC_PROTOCOLING_DIR = '/dataNAS/people/jmz/data/mimic_autoprocedure_selection/' #TODO: fix relative import
-STANZA_DIR = '/dataNAS/people/jmz/data/radiology_NER/Radiology-NER/' #TODO: fix relative import
->>>>>>> dc37c4c (inference best models stanza, procedure)
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -58,10 +50,7 @@ def get_pipeline(model_path, dataset_name, output_type):
                         tokenizer=tokenizer,
                         top_k=None,
                         batch_size=32,
-<<<<<<< HEAD
                         device=0,
-=======
->>>>>>> dc37c4c (inference best models stanza, procedure)
                         function_to_apply="none")
         else:
             raise NotImplementedError('output_type {} is not implemented'.format(output_type))
@@ -73,13 +62,9 @@ def get_pipeline(model_path, dataset_name, output_type):
         pipeline = TokenClassificationPipeline(
                     model=pretrained_model,
                     tokenizer=tokenizer,
-<<<<<<< HEAD
                     batch_size=1,
                     device=0,
                     aggregation_strategy='first')
-=======
-                    batch_size=1)
->>>>>>> dc37c4c (inference best models stanza, procedure)
     return pipeline, pretrained_model, tokenizer
 
 def tokenize_and_align_labels(examples, tokenizer, text_column_name, label_column_name, max_seq_length, label_to_id, b_to_i_label,
@@ -158,33 +143,7 @@ def get_data_files_by_task(task):
 
 def eval_using_trainer(pipeline, tokenizer, model, dataset, text_col, label_col, id_col, task, model_path, output_dir):
     #TODO: check
-<<<<<<< HEAD
     
-=======
-    label_list = [pipeline.model.config.id2label[k] for k in pipeline.model.config.id2label]
-    b_to_i_label = []
-    for idx, label in enumerate(label_list):
-        if label.startswith("B-") and label.replace("B-", "I-") in label_list:
-            b_to_i_label.append(label_list.index(label.replace("B-", "I-")))
-        else:
-            b_to_i_label.append(idx)
-    data_collator = DataCollatorForTokenClassification(tokenizer)
-    val_dataset = dataset.map(
-        tokenize_and_align_labels,
-        fn_kwargs={
-            'tokenizer': pipeline.tokenizer,
-            'text_column_name': text_col,
-            'label_column_name': label_col,
-            'max_seq_length': None,
-            'label_to_id': pipeline.model.config.label2id,
-            'b_to_i_label': b_to_i_label,
-            'label_all_tokens': False,
-        },
-        batched=True,
-        desc="Running tokenizer on validation dataset",
-        )
-    val_dataset = val_dataset.remove_columns(['ner','words'])
->>>>>>> dc37c4c (inference best models stanza, procedure)
     metric = evaluate.load("seqeval")
     def compute_metrics(p):
         predictions, labels = p
@@ -228,7 +187,6 @@ def eval_using_trainer(pipeline, tokenizer, model, dataset, text_col, label_col,
         compute_metrics=compute_metrics,
     )
     trainer.evaluate()
-<<<<<<< HEAD
 
 class NumpyEncoder(json.JSONEncoder):
     """from https://stackoverflow.com/a/47626762/10307491"""
@@ -238,9 +196,6 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-=======
-    
->>>>>>> dc37c4c (inference best models stanza, procedure)
 def main():
     args = parse_args()    
     
