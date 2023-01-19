@@ -12,6 +12,7 @@ from omegaconf import OmegaConf, dictconfig
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SequentialSampler
+import torch.nn.functional as F
 import evaluate
 import json
 import numpy as np
@@ -142,29 +143,7 @@ def get_data_files_by_task(task):
 
 def eval_using_trainer(pipeline, tokenizer, model, dataset, text_col, label_col, id_col, task, model_path, output_dir):
     #TODO: check
-    label_list = [pipeline.model.config.id2label[k] for k in pipeline.model.config.id2label]
-    b_to_i_label = []
-    for idx, label in enumerate(label_list):
-        if label.startswith("B-") and label.replace("B-", "I-") in label_list:
-            b_to_i_label.append(label_list.index(label.replace("B-", "I-")))
-        else:
-            b_to_i_label.append(idx)
-    data_collator = DataCollatorForTokenClassification(tokenizer)
-    val_dataset = dataset.map(
-        tokenize_and_align_labels,
-        fn_kwargs={
-            'tokenizer': pipeline.tokenizer,
-            'text_column_name': text_col,
-            'label_column_name': label_col,
-            'max_seq_length': None,
-            'label_to_id': pipeline.model.config.label2id,
-            'b_to_i_label': b_to_i_label,
-            'label_all_tokens': False,
-        },
-        batched=True,
-        desc="Running tokenizer on validation dataset",
-        )
-    val_dataset = val_dataset.remove_columns(['ner','words'])
+    
     metric = evaluate.load("seqeval")
     def compute_metrics(p):
         predictions, labels = p
@@ -208,7 +187,15 @@ def eval_using_trainer(pipeline, tokenizer, model, dataset, text_col, label_col,
         compute_metrics=compute_metrics,
     )
     trainer.evaluate()
-    
+
+class NumpyEncoder(json.JSONEncoder):
+    """from https://stackoverflow.com/a/47626762/10307491"""
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+
 def main():
     args = parse_args()    
     
@@ -220,37 +207,62 @@ def main():
     dataset = dataset[args.data_split]
 
     data_collator = DataCollatorForTokenClassification(tokenizer)
+    label_list = [pipeline.model.config.id2label[k] for k in pipeline.model.config.id2label]
+    b_to_i_label = []
+    for idx, label in enumerate(label_list):
+        if label.startswith("B-") and label.replace("B-", "I-") in label_list:
+            b_to_i_label.append(label_list.index(label.replace("B-", "I-")))
+        else:
+            b_to_i_label.append(idx)
+    data_collator = DataCollatorForTokenClassification(tokenizer)
+    dataset = dataset.map(
+        tokenize_and_align_labels,
+        fn_kwargs={
+            'tokenizer': pipeline.tokenizer,
+            'text_column_name': text_col,
+            'label_column_name': label_col,
+            'max_seq_length': None,
+            'label_to_id': pipeline.model.config.label2id,
+            'b_to_i_label': b_to_i_label,
+            'label_all_tokens': False,
+        },
+        batched=True,
+        desc="Running tokenizer on validation dataset",
+        )
+    dataset = dataset.remove_columns(['ner','words'])
     
-    # dl = DataLoader(dataset, 
-    #                 sampler=SequentialSampler(dataset),
-    #                 batch_size=1,
-    #                 collate_fn=data_collator)
-    # for batch in dl:
-    #     print(batch)
-    #     output = model(**batch)
-    #     print(output.logits.shape)
-    #     print()
-    #     # print(batch)
-    #     exit()
-    #     break
+    dl = DataLoader(dataset, 
+                    sampler=SequentialSampler(dataset),
+                    batch_size=1,
+                    collate_fn=data_collator)
+    model.to('cuda:0')
+    preds = {}
+    preds['id2labeldict'] = pipeline.model.config.id2label
+    for i,batch in enumerate(dl):
+        preds[i] = {}
+        preds[i]['input_ids'] = batch['input_ids'].numpy().tolist()[0]
+        preds[i]['labels'] = batch['labels'].numpy().tolist()[0]
+        
+        output = model(**{k:v.to('cuda:0') for k,v in batch.items()})
+        logits = output.logits[0]
+        softmax = F.softmax(logits, dim=1)
+        preds[i]['logits'] = logits.cpu().detach().numpy()
+        preds[i]['softmax'] = softmax.cpu().detach().numpy()
+        preds[i]['pred_labels'] = softmax.argmax(axis=1).tolist()
 
-    predictions = pipeline([' '.join(x) for x in dataset[text_col]])
-    # print(len(dataset))
-    # print(len(predictions))
-    # print(type(id_col))
-    # exit()
-    if id_col is not None:
-        row_ids = dataset[id_col]
-    else:
-        row_ids = list(range(len(dataset)))
+    # if id_col is not None:
+    #     row_ids = dataset[id_col]
+    # else:
+    #     row_ids = list(range(len(dataset)))
 
-    preds_dict = {row_id:pred for row_id, pred in zip(row_ids, predictions)}
+    # preds_dict = {row_id:pred for row_id, pred in zip(row_ids, predictions)}
 
     # Save predictions
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
     with open(os.path.join(args.output_dir, 'predictions.json'), 'w') as f:
-        f.write(json.dumps(str(preds_dict)))
+        json_string = json.dumps(preds, cls=NumpyEncoder)
+        f.write(json_string)
     
 
 if __name__=='__main__':
