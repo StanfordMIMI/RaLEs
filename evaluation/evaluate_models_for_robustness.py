@@ -66,28 +66,31 @@ def main():
     args = parse_args()
     # load dataset
     data_files, text_col, label_col, id_col = get_data_files_by_task(args.dataset_name)
-    print(len(data_files))
+    
     dataset = load_data(data_files)
-    print(len(dataset))
+    
     data_label_dict = dict(zip([str(x) for x in dataset[args.data_split]['ROW_ID']], dataset[args.data_split]['procedure_label']))
     print(data_label_dict)
+    with open('data_label_dict.json', 'w') as f:
+        json.dump(data_label_dict, f)
     label2idx = {label:idx for idx, label in enumerate(sorted(list(set(dataset['train']['procedure_label']))))}
     print(label2idx)
+    with open('label2idx.json', 'w') as f:
+        json.dump(label2idx, f)
     idx2label = {idx:label for label, idx in label2idx.items()}
     print(idx2label)
+    with open('idx2label.json', 'w') as f:
+        json.dump(idx2label, f)
     
     # load predictions
     with open(args.predictions_fpath, 'r') as f:
         predictions = json.load(f)
-    
-    pprint.pprint(predictions)    
-    pprint.pprint(predictions.keys())    
+       
     predictions_formatted = [order_predictions(predictions[x], label2idx) for x in predictions.keys()]
-    pprint.pprint(predictions_formatted)    
     labels = [label2idx[data_label_dict[x]] for x in predictions.keys()]
     print(labels)
     print(len(labels))
-    eval_name = args.predictions_fpath.split('/')[-2]
+    # eval_name = args.predictions_fpath.split('/')[-2]
     
     # evaluate
     # accuracy at k
