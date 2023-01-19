@@ -9,6 +9,7 @@ import evaluate
 from datasets import load_dataset
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
+import pprint
 # from metrics import AccuracyAtK
 MIMIC_PROTOCOLING_DIR = '/dataNAS/people/jmz/data/mimic_autoprocedure_selection/' #TODO: fix relative import
 
@@ -65,29 +66,37 @@ def main():
     args = parse_args()
     # load dataset
     data_files, text_col, label_col, id_col = get_data_files_by_task(args.dataset_name)
+    print(len(data_files))
     dataset = load_data(data_files)
+    print(len(dataset))
     data_label_dict = dict(zip([str(x) for x in dataset[args.data_split]['ROW_ID']], dataset[args.data_split]['procedure_label']))
-    
+    print(data_label_dict)
     label2idx = {label:idx for idx, label in enumerate(sorted(list(set(dataset['train']['procedure_label']))))}
+    print(label2idx)
     idx2label = {idx:label for label, idx in label2idx.items()}
+    print(idx2label)
     
     # load predictions
     with open(args.predictions_fpath, 'r') as f:
         predictions = json.load(f)
     
+    pprint.pprint(predictions)    
+    pprint.pprint(predictions.keys())    
     predictions_formatted = [order_predictions(predictions[x], label2idx) for x in predictions.keys()]
+    pprint.pprint(predictions_formatted)    
     labels = [label2idx[data_label_dict[x]] for x in predictions.keys()]
-    
+    print(labels)
+    print(len(labels))
     eval_name = args.predictions_fpath.split('/')[-2]
     
     # evaluate
     # accuracy at k
-    accuracyatk = evaluate.load('./accuracyatk.py')
-    metrics = {}
-    metrics[eval_name] = {}
-    for k in [1, 3, 5]:
-        metrics[eval_name][f'accuracyatk{k}'] = accuracyatk.compute(predictions=predictions_formatted, references=labels, k=k)[f'accuracyat{k}']
-    print(metrics)
+    # accuracyatk = evaluate.load('./accuracyatk.py')
+    # metrics = {}
+    # metrics[eval_name] = {}
+    # for k in [1, 3, 5]:
+    #     metrics[eval_name][f'accuracyatk{k}'] = accuracyatk.compute(predictions=predictions_formatted, references=labels, k=k)[f'accuracyat{k}']
+    # print(metrics)
 
     # confusion matrix
     # fig = plt.figure(figsize=(10,10))
