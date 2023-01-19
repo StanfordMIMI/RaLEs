@@ -49,6 +49,7 @@ def get_pipeline(model_path, dataset_name, output_type):
                         tokenizer=tokenizer,
                         top_k=None,
                         batch_size=32,
+                        device=0,
                         function_to_apply="none")
         else:
             raise NotImplementedError('output_type {} is not implemented'.format(output_type))
@@ -60,7 +61,9 @@ def get_pipeline(model_path, dataset_name, output_type):
         pipeline = TokenClassificationPipeline(
                     model=pretrained_model,
                     tokenizer=tokenizer,
-                    batch_size=1)
+                    batch_size=1,
+                    device=0,
+                    aggregation_strategy='first')
     return pipeline, pretrained_model, tokenizer
 
 def tokenize_and_align_labels(examples, tokenizer, text_column_name, label_column_name, max_seq_length, label_to_id, b_to_i_label,
@@ -216,21 +219,30 @@ def main():
     dataset = load_data(data_files)
     dataset = dataset[args.data_split]
 
+    data_collator = DataCollatorForTokenClassification(tokenizer)
     
-    # dl = DataLoader(val_dataset, 
-    #                 sampler=SequentialSampler(val_dataset),
-    #                 batch_size=32,
+    # dl = DataLoader(dataset, 
+    #                 sampler=SequentialSampler(dataset),
+    #                 batch_size=1,
     #                 collate_fn=data_collator)
     # for batch in dl:
+    #     print(batch)
     #     output = model(**batch)
     #     print(output.logits.shape)
     #     print()
     #     # print(batch)
+    #     exit()
     #     break
 
-    
-    predictions = pipeline(dataset[text_col])
-    row_ids = dataset[id_col]
+    predictions = pipeline([' '.join(x) for x in dataset[text_col]])
+    # print(len(dataset))
+    # print(len(predictions))
+    # print(type(id_col))
+    # exit()
+    if id_col is not None:
+        row_ids = dataset[id_col]
+    else:
+        row_ids = list(range(len(dataset)))
 
     preds_dict = {row_id:pred for row_id, pred in zip(row_ids, predictions)}
 
@@ -238,7 +250,7 @@ def main():
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
     with open(os.path.join(args.output_dir, 'predictions.json'), 'w') as f:
-        json.dump(preds_dict, f)
+        f.write(json.dumps(str(preds_dict)))
     
 
 if __name__=='__main__':
