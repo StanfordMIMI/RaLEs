@@ -185,7 +185,7 @@ def nll(inputs, targets, logits = True):
 
     return loss.numpy()
 
-def weighted_model_confidence(probs, targets, weights = [1.0,0.0]):
+def weighted_model_confidence(probs, targets, weights = [1.0,-1.0]):
     """
     WMC (Weighted Model Confidence) is a measure of the overall model confidence using  probabilistic predictions. It is defined as the weighted average confidence of the model in its predictions (rewarding / positive weight when it's confident and accurate, penalizing / negative weight when confident and inaccurate). 
 
@@ -195,7 +195,7 @@ def weighted_model_confidence(probs, targets, weights = [1.0,0.0]):
         weights (list of float): list of weights for accuracy and inaccuracy (default: [1,0])
 
     Returns:
-        wmc (float): Weighted model confidence. Higher the better. Maximum possible value is 1 and minimum possible value is 0. (assuming weights are 1 and 0)
+        wmc (float): Weighted model confidence. Higher the better. 
 
     (Original metric)
     """
