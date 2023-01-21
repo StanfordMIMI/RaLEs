@@ -1,6 +1,6 @@
 eval_name: bertbase_stanza
 model_name_or_path: bert-base-uncased
 tokenizer_path: bert-base-uncased
-cache_dir: /dataNAS/people/jmz/models/transformers_downloads/
+cache_dir: /DEIDPATH/models/transformers_downloads/
 eval_datasets: ['stanza_ner']
 output_dir: '../results/ner/'
