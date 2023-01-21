@@ -13,7 +13,11 @@ import numpy as np
 # import matplotlib.pyplot as plt
 import ast
 # from metrics import AccuracyAtK
+<<<<<<< HEAD
 STANZA_DIR = '/DEIDPATH/data/radiology_NER/Radiology-NER/' #TODO: fix relative import
+=======
+STANZA_DIR = '/dataNAS/people/jmz/data/radiology_NER/Radiology-NER/' #TODO: fix relative import
+>>>>>>> 098ce17 (updated eval scripts)
 
 def parse_args():
     parser = argparse.ArgumentParser()
