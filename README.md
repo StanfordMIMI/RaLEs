@@ -1,5 +1,5 @@
 # Overview
-This repository contains code and results for RaLEs: Radiology Language Evaluations (manuscript in preparation).
+This repository contains code and results for RaLEs: Radiology Language Evaluations (manuscript under consideration).
 
 # Contents
 The repository is organized in 5 modules, each contained within its own directory: 

@@ -78,9 +78,6 @@ def get_data_files_by_task(task):
     """
     Get the data files for a given task
     """
-    # if task == 'stanford_body_ct_protocol':
-    #     return {'train': os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'body_ct_protocols_ge_train.csv'),
-    #             'test':os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'body_ct_protocols_ge_test.csv')}
     if task == 'mimiciii_ct_procedure':
         text_col = 'indication'
         label_col = 'procedure_label'
