@@ -9,21 +9,24 @@ Outputs:
 # Data Download Instructions
 
 ## RadGraph (NLU)
+Access the dataset at https://physionet.org/content/radgraph/1.0.0/.
 
 ## RadSpRL (NLU)
+Download the Rad-SpRL.xml file from https://data.mendeley.com/datasets/yhb26hfz8n.
 
 ## MIMIC procedure selection (NLU)
-
-## Critical abnormality detection (NLU)
+Access the MIMIC-III dataset at https://physionet.org/content/mimiciii/1.4/.
 
 ## Stanza NER (NLU)
+A link for access to this dataset will be provided upon institutional review board approval.
 
 ## MEDIQA 2021 (NLG)
+Follow the instructions for dataset download here https://github.com/abachaa/MEDIQA2021/tree/main/Task3.
 
 ## RaLEs Radiology Report Generation (NLG)
 
 #### Reports
-You must a physionet account with permissions to download MIMIC-CXR Database. 
+You must a create a physionet account with permissions to download MIMIC-CXR Database. 
 
 Download `mimic-cxr-reports.zip` from https://physionet.org/content/mimic-cxr/2.0.0/mimic-cxr-reports.zip.
 Place the extracted `mimic-cxr-reports` folder in the `datasets/rrg_rrs/mimic-cxr` folder. 
@@ -53,30 +56,20 @@ datasets/rrg_rrs/mimic-cxr
 ├── mimic-cxr-2.0.0-metadata.csv
 └── README.md
 ```
-#### Images
-You must a physionet account with permissions to download MIMIC-CXR Database. 
-Download images from https://physionet.org/content/mimic-cxr-jpg/2.0.0/ 
-
-The downloaded `files` folder must be stored in a `mimic-cxr-images` folder. 
-You are free to resize the images using the following transform:
-``` 
-transforms.Compose([transforms.Resize(512)])        
-```
-
-**Warning: do not use `transforms.Resize(512,512)`**        
-
 
 # Data Preprocessing Instructions
 
 ## RadGraph (NLU)
+Run the `convert_radgraph_to_dygiepp.py` in this folder, specifying the location where the RadGraph dataset is saved.
 
 ## RadSpRL (NLU)
+Run the `convert_radsprl_to_dygiepp.py` script in this folder, specifying the location where the RadSpRL dataset is saved.
 
 ## MIMIC procedure selection (NLU)
-
-## Critical abnormality detection (NLU)
+Run the `create_dataset.py` followed by the `create_train_dev_test_split.py` scripts in the `mimiciii_procedure_selection` folder, specifying the location where the MIMIC dataset is saved.
 
 ## Stanza NER (NLU)
+The dataset will be provided without requiring further preprocessing.
 
 ## MEDIQA 2021 (NLG)
 
