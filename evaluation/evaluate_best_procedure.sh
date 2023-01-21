@@ -1,4 +1,4 @@
-# python evaluate_models.py\
+# python evaluate_stanza_models.py\
 #     --predictions_fpath '../inference/predictions/bertbase_procedure_test/predictions.json'\
 #     --dataset_name mimiciii_ct_procedure \
 #     --data_split test
