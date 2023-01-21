@@ -18,8 +18,8 @@ import json
 import numpy as np
 from transformers.trainer_pt_utils import nested_concat
 
-MIMIC_PROTOCOLING_DIR = '/dataNAS/people/jmz/data/mimic_autoprocedure_selection/' #TODO: fix relative import
-STANZA_DIR = '/dataNAS/people/jmz/data/radiology_NER/Radiology-NER/' #TODO: fix relative import
+MIMIC_PROTOCOLING_DIR = '/DEIDPATH/data/mimic_autoprocedure_selection/' #TODO: fix relative import
+STANZA_DIR = '/DEIDPATH/data/radiology_NER/Radiology-NER/' #TODO: fix relative import
 
 def parse_args():
     parser = argparse.ArgumentParser()
