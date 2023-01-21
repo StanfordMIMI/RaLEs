@@ -10,7 +10,7 @@ from datasets import load_dataset
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 # from metrics import AccuracyAtK
-MIMIC_PROTOCOLING_DIR = '/dataNAS/people/jmz/data/mimic_autoprocedure_selection/' #TODO: fix relative import
+MIMIC_PROTOCOLING_DIR = '/DEIDPATH/data/mimic_autoprocedure_selection/' #TODO: fix relative import
 
 def parse_args():
     parser = argparse.ArgumentParser()
