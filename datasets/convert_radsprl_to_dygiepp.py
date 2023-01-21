@@ -158,7 +158,7 @@ def get_sentence_entities_relations(radsprl_document):
         return
     return (pos_sentences, pos_sentence_entities, pos_sentence_relations)
 def main():
-    radsprl_dir = '/PATH_TO//data/RadSpRL/' #TODO: fix relative import
+    radsprl_dir = '/DEIDPATH/data/RadSpRL/' #TODO: fix relative import
     radsprl_file = os.path.join(radsprl_dir, 'Rad-SpRL.xml')
     radsprl_docs = minidom.parse(radsprl_file).getElementsByTagName('Document')
     
