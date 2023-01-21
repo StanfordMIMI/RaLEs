@@ -13,9 +13,6 @@ def parse_config():
 
 def main():
     config = parse_config()
-    
-    if 'stanford_body_ct_protocol' in config.eval_datasets:
-        do_document_classification_rales(task='stanford_body_ct_protocol', config=config)
     if 'mimiciii_ct_procedure' in config.eval_datasets:
         config.dataset_text_col = 'indication'
         do_document_classification_rales(task='mimiciii_ct_procedure', config=config)
