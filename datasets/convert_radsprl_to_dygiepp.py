@@ -158,7 +158,7 @@ def get_sentence_entities_relations(radsprl_document):
         return
     return (pos_sentences, pos_sentence_entities, pos_sentence_relations)
 def main():
-    radsprl_dir = '/dataNAS/people/jmz/data/RadSpRL/' #TODO: fix relative import
+    radsprl_dir = '/DEIDPATH/data/RadSpRL/' #TODO: fix relative import
     radsprl_file = os.path.join(radsprl_dir, 'Rad-SpRL.xml')
     radsprl_docs = minidom.parse(radsprl_file).getElementsByTagName('Document')
     
@@ -168,16 +168,6 @@ def main():
         if formatted_ser is not None:
             formatted_doc = {}
             formatted_doc['doc_key'] = doc.attributes['id'].value
-            # if formatted_doc['doc_key'] == "01075":
-            #     print(formatted_ser[0])
-            #     print(formatted_ser[1])
-            #     print(formatted_ser[2])
-            #     exit()
-            # if formatted_doc['doc_key'] == "00709":
-            #     print(formatted_ser[0])
-            #     print(formatted_ser[1])
-            #     print(formatted_ser[2])
-            #     exit()
             formatted_doc['dataset'] = "radsprl"
             formatted_doc['sentences'] = formatted_ser[0]
             formatted_doc['ner'] = formatted_ser[1]

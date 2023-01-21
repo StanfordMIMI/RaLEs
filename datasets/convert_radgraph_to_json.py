@@ -63,7 +63,7 @@ def write_jsonl(json_dataset, fpath):
             fout.write('\n')
 
 def main():
-    radgraph_dir = '/dataNAS/people/jmz/data/radgraph/1.0.0/'
+    radgraph_dir = '/DEIDPATH/data/radgraph/1.0.0/'
     for fname in ['train','dev','test']:
         parsed_contents = parse_file(f'{radgraph_dir}{fname}.json')
         if fname != 'test':
