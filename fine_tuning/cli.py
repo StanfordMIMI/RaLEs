@@ -2,7 +2,7 @@ from omegaconf import OmegaConf
 import argparse
 from eval_rales_ner import do_ner_rales
 from eval_rales_doc_classification import do_document_classification_rales
-from eval_rales_re import do_re_rales
+
 
 def parse_config():
     parser = argparse.ArgumentParser(description='RaLEs Evaluation')
