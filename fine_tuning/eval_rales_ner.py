@@ -582,22 +582,12 @@ def run_ner(config_mods=None, eval_name=None, task=None):
             checkpoint = last_checkpoint
         train_result = trainer.hyperparameter_search(
                             direction='maximize',
-                            n_trials=10, 
+                            n_trials=1, 
                             hp_space=hp_space,
                             compute_objective= lambda metrics: metrics['eval_overall_f1'],
                             study_name= f'{training_args.output_dir}_{eval_name}_{task}'
                             )
-        metrics = train_result
-        trainer.save_model()  # Saves the tokenizer too for easy upload
-
-        max_train_samples = (
-            data_args.max_train_samples if data_args.max_train_samples is not None else len(train_dataset)
-        )
-        metrics["train_samples"] = min(max_train_samples, len(train_dataset))
-
-        trainer.log_metrics("train", metrics)
-        trainer.save_metrics("train", metrics)
-        trainer.save_state()
+        #model is saved automatically
 
     # Evaluation
     if training_args.do_eval:
@@ -676,7 +666,7 @@ def do_ner_rales(task, config):
     sys.argv += ['--metric_for_best_model', 'overall_f1']
     sys.argv += ['--save_total_limit', '1']
 
-    sys.argv += ['--do_train', '--do_eval']
+    sys.argv += ['--do_eval']#['--do_train', '--do_eval']
     
     if task == 'radgraph_ner':
         train_file = os.path.join(RADGRAPH_DIR, 'train_jsonl.json')
