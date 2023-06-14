@@ -101,6 +101,10 @@ class ModelArguments:
         default=False,
         metadata={"help": "Will enable to load a pretrained model whose head dimensions are different."},
     )
+    linear_probe: bool = field(
+        default=False,
+        metadata={"help": "If true freezes base model weights and enables linear probe training."}
+    )
 
 
 @dataclass
@@ -405,9 +409,9 @@ def run_ner(config_mods=None, eval_name=None, task=None):
     # Set the correspondences label/ID inside the model config
     config.label2id = {l: i for i, l in enumerate(label_list)}
     config.id2label = {i: l for i, l in enumerate(label_list)}
-
-    def model_init(): 
-        return AutoModelForTokenClassification.from_pretrained(
+    
+    def model_init(lp=model_args.linear_probe):
+        model = AutoModelForTokenClassification.from_pretrained(
             model_args.model_name_or_path,
             from_tf=bool(".ckpt" in model_args.model_name_or_path),
             config=config,
@@ -416,7 +420,11 @@ def run_ner(config_mods=None, eval_name=None, task=None):
             use_auth_token=True if model_args.use_auth_token else None,
             ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
         )
-        
+        if lp:
+            for param in model.base_model.parameters():
+                param.requires_grad = False
+        return model
+    
     # Map that sends B-Xxx label to its I-Xxx counterpart
     b_to_i_label = []
     for idx, label in enumerate(label_list):
@@ -582,7 +590,7 @@ def run_ner(config_mods=None, eval_name=None, task=None):
             checkpoint = last_checkpoint
         train_result = trainer.hyperparameter_search(
                             direction='maximize',
-                            n_trials=1, 
+                            n_trials=10, 
                             hp_space=hp_space,
                             compute_objective= lambda metrics: metrics['eval_overall_f1'],
                             study_name= f'{training_args.output_dir}_{eval_name}_{task}'
@@ -650,8 +658,7 @@ def run_ner(config_mods=None, eval_name=None, task=None):
     # )
 
 def do_ner_rales(task, config):
-    # add the model attributes to arguments for HF argparser compatibility
-    print(config)
+    # add the model attributes to arguments for HF argparser compatibility   
     
     sys.argv = ['eval_rales_ner.py'] 
     sys.argv += ['--model_name_or_path', config['model_name_or_path']]
@@ -666,7 +673,9 @@ def do_ner_rales(task, config):
     sys.argv += ['--metric_for_best_model', 'overall_f1']
     sys.argv += ['--save_total_limit', '1']
 
-    sys.argv += ['--do_eval']#['--do_train', '--do_eval']
+    sys.argv += ['--do_train', '--do_eval']
+    if 'linear_probe' in config and config['linear_probe']==True:
+        sys.argv += ['--linear_probe']
     
     if task == 'radgraph_ner':
         train_file = os.path.join(RADGRAPH_DIR, 'train_jsonl.json')
@@ -674,14 +683,24 @@ def do_ner_rales(task, config):
         sys.argv += ['--train_file', train_file]
         sys.argv += ['--validation_file', validation_file]
         
-        run_ner(eval_name=config['eval_name'], task=task)
     if task == 'stanza_ner':
         train_file = os.path.join(STANZA_DIR, 'train.json')
         validation_file = os.path.join(STANZA_DIR, 'dev.json')
         sys.argv += ['--train_file', train_file]
         sys.argv += ['--validation_file', validation_file]
         
-        run_ner(eval_name=config['eval_name'], task=task)
-
+    if task == 'stanza_ner_10pct':
+        train_file = os.path.join(STANZA_DIR, 'train_10pct.json')
+        validation_file = os.path.join(STANZA_DIR, 'dev_10pct.json')
+        sys.argv += ['--train_file', train_file]
+        sys.argv += ['--validation_file', validation_file]
+                
+    if task == 'stanza_ner_1pct':
+        train_file = os.path.join(STANZA_DIR, 'train_1pct.json')
+        validation_file = os.path.join(STANZA_DIR, 'dev_1pct.json')
+        sys.argv += ['--train_file', train_file]
+        sys.argv += ['--validation_file', validation_file]
+        
+    run_ner(eval_name=config['eval_name'], task=task)
 if __name__ == "__main__":
     run_ner()

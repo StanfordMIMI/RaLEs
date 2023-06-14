@@ -1,0 +1,6 @@
+eval_name: bioclinicalbert_pretrained
+model_name_or_path: /dataNAS/people/jmz/jmz_code/radiology_nlp/rales/results/classification/_bioclinicalbert_mimiciii_ct_procedure/run-3/checkpoint-3632
+tokenizer_path: /dataNAS/people/jmz/jmz_code/radiology_nlp/rales/results/classification/_bioclinicalbert_mimiciii_ct_procedure/run-3/checkpoint-3632
+cache_dir: /dataNAS/people/jmz/models/transformers_downloads/
+eval_datasets: ['stanford_body_ct_protocol_25']
+output_dir: '../results/classification/'

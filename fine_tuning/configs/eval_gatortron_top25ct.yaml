@@ -2,5 +2,5 @@ eval_name: gatortron
 model_name_or_path: /dataNAS/people/jmz/models/gatortron_v1/huggingface/
 tokenizer_path: /dataNAS/people/jmz/models/gatortron_v1/huggingface/tokenizer
 cache_dir: /dataNAS/people/jmz/models/transformers_downloads/
-eval_datasets: ['stanza_ner']
-output_dir: '../results/ner/'
+eval_datasets: ['stanford_body_ct_protocol_25']
+output_dir: '../results/classification/'

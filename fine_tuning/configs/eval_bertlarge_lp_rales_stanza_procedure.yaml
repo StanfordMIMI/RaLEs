@@ -1,0 +1,7 @@
+eval_name: bertlarge
+model_name_or_path: bert-large-uncased
+tokenizer_path: bert-large-uncased
+cache_dir: /dataNAS/people/jmz/models/transformers_downloads/
+eval_datasets: ['stanza_ner','mimiciii_ct_procedure']
+output_dir: '../results/lp/'
+linear_probe: True

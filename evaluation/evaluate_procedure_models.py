@@ -6,17 +6,19 @@ from datasets import load_dataset
 import json
 from omegaconf import OmegaConf, dictconfig
 import evaluate
-from datasets import load_dataset
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
+from evaluate_stanza_models import bootstrap
 # from metrics import AccuracyAtK
-MIMIC_PROTOCOLING_DIR = '/DEIDPATH/data/mimic_autoprocedure_selection/' #TODO: fix relative import
+MIMIC_PROTOCOLING_DIR = '/dataNAS/people/jmz/data/mimic_autoprocedure_selection/' #TODO: fix relative import
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--predictions_fpath', type=str, default='../inference/predictions/gatortron_mimiciii_ct_procedure_val/predictions.json')
     parser.add_argument('--dataset_name', type=str, default='mimiciii_ct_procedure')
     parser.add_argument('--data_split', type=str, default='val')
+    parser.add_argument('--bootstrap', action='store_true')
+
     args = parser.parse_args()
     return args
 
@@ -31,6 +33,7 @@ def load_data(fpaths):
         dset = load_dataset('csv', data_files=dict(fpaths))
         return dset
     elif fpaths[0].endswith('.csv'): #TODO make this compatible with dict not list
+        print("this happened")
         return load_dataset('csv', data_files={'train':[x for x in fpaths if 'train' in x]}), \
                 load_dataset('csv', data_files={'test':[x for x in fpaths if 'test' in x]})
     else:
@@ -66,9 +69,11 @@ def main():
     # load dataset
     data_files, text_col, label_col, id_col = get_data_files_by_task(args.dataset_name)
     dataset = load_data(data_files)
+    
     data_label_dict = dict(zip([str(x) for x in dataset[args.data_split]['ROW_ID']], dataset[args.data_split]['procedure_label']))
     
-    label2idx = {label:idx for idx, label in enumerate(sorted(list(set(dataset['train']['procedure_label']))))}
+    label2idx = {label:idx for idx, label in enumerate(sorted(list(set(dataset[args.data_split]['procedure_label']))))}
+    
     idx2label = {idx:label for label, idx in label2idx.items()}
     
     # load predictions

@@ -8,12 +8,13 @@ dygiepp format:
 https://github.com/dwadden/dygiepp/blob/4420bf990cc9f7bcba38dde5861d62727d0109ab/doc/data.md
 
 Used for relationship extraction task
+
 """
 
 import json 
-
 from convert_radgraph_to_json import write_jsonl
-
+import numpy as np
+from math import ceil
 def parse_file(fpath):
     with open(fpath, 'r') as fin:
         contents = json.load(fin)
@@ -72,12 +73,23 @@ def convert_dict_to_plmarker(radgraph_dataset, two_labelers, save_source=False):
 
 def main():
 
-    radgraph_dir = '/DEIDPATH/data/radgraph/1.0.0/' #TODO: fix relative import 
+    radgraph_dir = '/dataNAS/people/jmz/data/radgraph/1.0.0/' #TODO: fix relative import 
     for fname in ['train','dev','test']:
         parsed_contents = parse_file(f'{radgraph_dir}{fname}.json')
         
         if fname != 'test':            
             write_jsonl(parsed_contents, f'{radgraph_dir}{fname}_dygiepp_jsonl.json')
+
+            #create 10% and 1% splits
+            np.random.seed(2023)
+            num_examples = len(parsed_contents)
+            idx_10pct = np.random.choice(num_examples, ceil(num_examples/10), replace=False)
+            idx_1pct = np.random.choice(idx_10pct, ceil(len(idx_10pct)/10), replace=False)
+            
+            #write 10% and 1% splits
+            write_jsonl([parsed_contents[i] for i in idx_10pct], f'{radgraph_dir}{fname}_10pct_dygiepp_jsonl.json')
+            write_jsonl([parsed_contents[i] for i in idx_1pct], f'{radgraph_dir}{fname}_1pct_dygiepp_jsonl.json')
+
         else:
             for data_source in ['MIMIC-CXR','CheXpert']:
                 relevant_contents = []

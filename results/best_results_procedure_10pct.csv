@@ -1,0 +1,17 @@
+,best_metric,best_subdir
+_deberta-v3-large_mimiciii_ct_procedure_10pct,49.14%,/bmrNAS/people/jmz/models/rales/classification_eff/_deberta-v3-large_mimiciii_ct_procedure_10pct/run-2/checkpoint-910
+_electrabase_procedure_mimiciii_ct_procedure_10pct,54.68%,/bmrNAS/people/jmz/models/rales/classification_eff/_electrabase_procedure_mimiciii_ct_procedure_10pct/run-5/checkpoint-1092
+_robertabase_procedure_mimiciii_ct_procedure_10pct,57.25%,/bmrNAS/people/jmz/models/rales/classification_eff/_robertabase_procedure_mimiciii_ct_procedure_10pct/run-8/checkpoint-1092
+_gatortron_mimiciii_ct_procedure_10pct,62.61%,/bmrNAS/people/jmz/models/rales/classification_eff/_gatortron_mimiciii_ct_procedure_10pct/run-2/checkpoint-546
+_biolinkbertlarge_stanza_mimiciii_ct_procedure_10pct,57.78%,/bmrNAS/people/jmz/models/rales/classification_eff/_biolinkbertlarge_stanza_mimiciii_ct_procedure_10pct/run-8/checkpoint-910
+_radbert2_mimiciii_ct_procedure_10pct,59.64%,/bmrNAS/people/jmz/models/rales/classification_eff/_radbert2_mimiciii_ct_procedure_10pct/run-2/checkpoint-546
+_robertalarge_procedure_mimiciii_ct_procedure_10pct,58.88%,/bmrNAS/people/jmz/models/rales/classification_eff/_robertalarge_procedure_mimiciii_ct_procedure_10pct/run-8/checkpoint-1092
+_debertav3base_procedure_mimiciii_ct_procedure_10pct,54.00%,/bmrNAS/people/jmz/models/rales/classification_eff/_debertav3base_procedure_mimiciii_ct_procedure_10pct/run-0/checkpoint-910
+_pubmedbert_base_mimiciii_ct_procedure_10pct,60.48%,/bmrNAS/people/jmz/models/rales/classification_eff/_pubmedbert_base_mimiciii_ct_procedure_10pct/run-6/checkpoint-728
+_electralarge_procedure_mimiciii_ct_procedure_10pct,41.56%,/bmrNAS/people/jmz/models/rales/classification_eff/_electralarge_procedure_mimiciii_ct_procedure_10pct/run-2/checkpoint-728
+_electrasmall_procedure_mimiciii_ct_procedure_10pct,48.87%,/bmrNAS/people/jmz/models/rales/classification_eff/_electrasmall_procedure_mimiciii_ct_procedure_10pct/run-7/checkpoint-910
+_bertlarge_procedure_mimiciii_ct_procedure_10pct,58.77%,/bmrNAS/people/jmz/models/rales/classification_eff/_bertlarge_procedure_mimiciii_ct_procedure_10pct/run-4/checkpoint-546
+_biolinkbertbase_procedureeff_mimiciii_ct_procedure_10pct,60.10%,/bmrNAS/people/jmz/models/rales/classification_eff/_biolinkbertbase_procedureeff_mimiciii_ct_procedure_10pct/run-0/checkpoint-728
+_bertbase_procedure_mimiciii_ct_procedure_10pct,53.86%,/bmrNAS/people/jmz/models/rales/classification_eff/_bertbase_procedure_mimiciii_ct_procedure_10pct/run-4/checkpoint-910
+_bioclinicalbert_mimiciii_ct_procedure_10pct,60.32%,/bmrNAS/people/jmz/models/rales/classification_eff/_bioclinicalbert_mimiciii_ct_procedure_10pct/run-7/checkpoint-728
+_radbert1_mimiciii_ct_procedure_10pct,60.95%,/bmrNAS/people/jmz/models/rales/classification_eff/_radbert1_mimiciii_ct_procedure_10pct/run-2/checkpoint-910
