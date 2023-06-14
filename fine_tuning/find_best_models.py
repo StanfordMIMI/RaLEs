@@ -10,11 +10,7 @@ import pandas as pd
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--results_dir', type=str, default='../results/ner/')
-<<<<<<< HEAD
-    
-=======
     parser.add_argument('--output_dir', type=str, default='./classification/')
->>>>>>> 718153e (updated stanza hyperparameter search)
     args = parser.parse_args()
     return args
 

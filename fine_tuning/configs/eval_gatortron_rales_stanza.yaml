@@ -1,6 +1,6 @@
-eval_name: gatortron_stanza
-model_name_or_path: /DEIDPATH/models/gatortron_v1/huggingface/tokenizer
-tokenizer_path: /DEIDPATH/models/gatortron_v1/huggingface/tokenizer
-cache_dir: /DEIDPATH/models/transformers_downloads/
+eval_name: gatortron
+model_name_or_path: /dataNAS/people/jmz/models/gatortron_v1/huggingface/
+tokenizer_path: /dataNAS/people/jmz/models/gatortron_v1/huggingface/tokenizer
+cache_dir: /dataNAS/people/jmz/models/transformers_downloads/
 eval_datasets: ['stanza_ner']
 output_dir: '../results/ner/'
