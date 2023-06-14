@@ -1,6 +1,6 @@
 eval_name: radbert2
 model_name_or_path: zzxslp/RadBERT-RoBERTa-4m
 tokenizer_path: zzxslp/RadBERT-RoBERTa-4m
-cache_dir: /dataNAS/people/jmz/models/transformers_downloads/
+cache_dir: /PATH_TO//models/transformers_downloads/
 eval_datasets: ['mimiciii_ct_procedure_10pct','mimiciii_ct_procedure_1pct']
 output_dir: '../results/classification/'

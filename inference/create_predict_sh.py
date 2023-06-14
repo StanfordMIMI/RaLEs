@@ -71,17 +71,17 @@ def main():
 
             fout.write(f"allennlp evaluate \\\n")
             fout.write(f"\t{os.path.join(row['best_subdir'],'model.tar.gz')} \\\n")
-            fout.write(f"\t/dataNAS/people/jmz/data/radgraph/1.0.0/test_MIMIC-CXR_dygiepp_jsonl.json \\\n")
+            fout.write(f"\t/PATH_TO//data/radgraph/1.0.0/test_MIMIC-CXR_dygiepp_jsonl.json \\\n")
             fout.write(f"\t--cuda-device 0 \\\n")
             fout.write(f"\t--include-package dygie \\\n")
-            fout.write(f"\t--output-file /dataNAS/people/jmz/jmz_code/radiology_nlp/rales/results/re/radgraph_lp_mimiccxr_test_{row['Unnamed: 0']}.json \n\n")
+            fout.write(f"\t--output-file /PATH_TO//jmz_code/radiology_nlp/rales/results/re/radgraph_lp_mimiccxr_test_{row['Unnamed: 0']}.json \n\n")
 
             fout.write(f"allennlp evaluate \\\n")
             fout.write(f"\t{os.path.join(row['best_subdir'],'model.tar.gz')} \\\n")
-            fout.write(f"\t/dataNAS/people/jmz/data/radgraph/1.0.0/test_CheXpert_dygiepp_jsonl.json \\\n")
+            fout.write(f"\t/PATH_TO//data/radgraph/1.0.0/test_CheXpert_dygiepp_jsonl.json \\\n")
             fout.write(f"\t--cuda-device 0 \\\n")
             fout.write(f"\t--include-package dygie \\\n")
-            fout.write(f"\t--output-file /dataNAS/people/jmz/jmz_code/radiology_nlp/rales/results/re/radgraph_lp_chexpert_test_{row['Unnamed: 0']}.json \n\n")
+            fout.write(f"\t--output-file /PATH_TO//jmz_code/radiology_nlp/rales/results/re/radgraph_lp_chexpert_test_{row['Unnamed: 0']}.json \n\n")
 
 
     # RadSpRL
@@ -105,17 +105,17 @@ def main():
 
             # fout.write(f"allennlp evaluate \\\n")
             # fout.write(f"\t{os.path.join(row['best_subdir'],'model.tar.gz')} \\\n")
-            # fout.write(f"\t/dataNAS/people/jmz/data/RadSpRL/radsprl_dygiepp_test.jsonl \\\n")
+            # fout.write(f"\t/PATH_TO//data/RadSpRL/radsprl_dygiepp_test.jsonl \\\n")
             # fout.write(f"\t--cuda-device 0 \\\n")
             # fout.write(f"\t--include-package dygie \\\n")
-            # fout.write(f"\t--output-file /dataNAS/people/jmz/jmz_code/radiology_nlp/rales/results/re/radsprl_lp_test_{row['Unnamed: 0']}.json \n\n")
+            # fout.write(f"\t--output-file /PATH_TO//jmz_code/radiology_nlp/rales/results/re/radsprl_lp_test_{row['Unnamed: 0']}.json \n\n")
 
             # fout.write(f"allennlp evaluate \\\n")
             # fout.write(f"\t{os.path.join(row['best_subdir'],'model.tar.gz')} \\\n")
-            # fout.write(f"\t/dataNAS/people/jmz/data/RadSpRL/radsprl_dygiepp_test.jsonl \\\n")
+            # fout.write(f"\t/PATH_TO//data/RadSpRL/radsprl_dygiepp_test.jsonl \\\n")
             # fout.write(f"\t--cuda-device 0 \\\n")
             # fout.write(f"\t--include-package dygie \\\n")
-            # fout.write(f"\t--output-file /dataNAS/people/jmz/jmz_code/radiology_nlp/rales/results/re/radsprl_lp_test_{row['Unnamed: 0']}.json \n\n")
+            # fout.write(f"\t--output-file /PATH_TO//jmz_code/radiology_nlp/rales/results/re/radsprl_lp_test_{row['Unnamed: 0']}.json \n\n")
             
 
 
