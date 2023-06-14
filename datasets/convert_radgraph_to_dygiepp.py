@@ -73,7 +73,7 @@ def convert_dict_to_plmarker(radgraph_dataset, two_labelers, save_source=False):
 
 def main():
 
-    radgraph_dir = '/dataNAS/people/jmz/data/radgraph/1.0.0/' #TODO: fix relative import 
+    radgraph_dir = '/PATH_TO//data/radgraph/1.0.0/' #TODO: fix relative import 
     for fname in ['train','dev','test']:
         parsed_contents = parse_file(f'{radgraph_dir}{fname}.json')
         
