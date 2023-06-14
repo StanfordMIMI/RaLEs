@@ -15,7 +15,7 @@ from xml.dom import minidom
 from collections import Counter
 from numpy.random import choice, seed
 import os
-
+from math import ceil
 
 def flatten(l):
     return [item for sublist in l for item in sublist]
@@ -158,7 +158,7 @@ def get_sentence_entities_relations(radsprl_document):
         return
     return (pos_sentences, pos_sentence_entities, pos_sentence_relations)
 def main():
-    radsprl_dir = '/DEIDPATH/data/RadSpRL/' #TODO: fix relative import
+    radsprl_dir = '/PATH_TO//data/RadSpRL/' #TODO: fix relative import
     radsprl_file = os.path.join(radsprl_dir, 'Rad-SpRL.xml')
     radsprl_docs = minidom.parse(radsprl_file).getElementsByTagName('Document')
     
@@ -184,8 +184,20 @@ def main():
     
     for fname in ['train','dev','test']:
         contents = list(map(lambda x: positive_documents[x], train_ixs if fname == 'train' else dev_ixs if fname == 'dev' else test_ixs))
-        with open(os.path.join(radsprl_dir, f'radsprl_dygiepp_{fname}.jsonl'), 'w') as f:
-            f.write('\n'.join(map(json.dumps, contents)))
+        # with open(os.path.join(radsprl_dir, f'radsprl_dygiepp_{fname}.jsonl'), 'w') as f:
+        #     f.write('\n'.join(map(json.dumps, contents)))
+        if fname != 'test':
+            #create 10% and 1% splits
+            num_examples = len(contents)
+            idx_10pct = choice(num_examples, ceil(num_examples/10), replace=False)
+            idx_1pct = choice(idx_10pct, ceil(len(idx_10pct)/10), replace=False)
+            
+            #write 10% and 1% splits
+            with open(os.path.join(radsprl_dir, f'radsprl_dygiepp_{fname}_10pct.jsonl'), 'w') as f:
+                f.write('\n'.join(map(json.dumps, [contents[i] for i in idx_10pct])))
+            with open(os.path.join(radsprl_dir, f'radsprl_dygiepp_{fname}_1pct.jsonl'), 'w') as f:
+                f.write('\n'.join(map(json.dumps, [contents[i] for i in idx_1pct])))
+            
 
 if __name__ == '__main__':
     main()

@@ -16,9 +16,22 @@ def main():
     if 'mimiciii_ct_procedure' in config.eval_datasets:
         config.dataset_text_col = 'indication'
         do_document_classification_rales(task='mimiciii_ct_procedure', config=config)
+    if 'mimiciii_ct_procedure_10pct' in config.eval_datasets:
+        config.dataset_text_col = 'indication'
+        do_document_classification_rales(task='mimiciii_ct_procedure_10pct', config=config)
+    if 'mimiciii_ct_procedure_1pct' in config.eval_datasets:
+        config.dataset_text_col = 'indication'
+        do_document_classification_rales(task='mimiciii_ct_procedure_1pct', config=config)
+    if 'stanford_body_ct_protocol_25' in config.eval_datasets:
+        do_document_classification_rales(task='stanford_body_ct_protocol_25', config=config)
     if 'radgraph_ner' in config.eval_datasets:
         do_ner_rales(task='radgraph_ner', config=config)
     if 'stanza_ner' in config.eval_datasets:
         do_ner_rales(task='stanza_ner', config=config)
+    if 'stanza_ner_10pct' in config.eval_datasets:
+        do_ner_rales(task='stanza_ner_10pct', config=config)
+    if 'stanza_ner_1pct' in config.eval_datasets:
+        do_ner_rales(task='stanza_ner_1pct', config=config)
+        
 if __name__=='__main__':
     main()

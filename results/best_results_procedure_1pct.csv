@@ -1,0 +1,17 @@
+,best_metric,best_subdir
+_debertav3base_procedure_mimiciii_ct_procedure_1pct,39.14%,/bmrNAS/people/jmz/models/rales/classification_eff/_debertav3base_procedure_mimiciii_ct_procedure_1pct/run-4/checkpoint-95
+_electrabase_procedure_mimiciii_ct_procedure_1pct,38.79%,/bmrNAS/people/jmz/models/rales/classification_eff/_electrabase_procedure_mimiciii_ct_procedure_1pct/run-3/checkpoint-114
+_robertalarge_procedure_mimiciii_ct_procedure_1pct,45.52%,/bmrNAS/people/jmz/models/rales/classification_eff/_robertalarge_procedure_mimiciii_ct_procedure_1pct/run-0/checkpoint-95
+_biolinkbertlarge_stanza_mimiciii_ct_procedure_1pct,37.20%,/bmrNAS/people/jmz/models/rales/classification_eff/_biolinkbertlarge_stanza_mimiciii_ct_procedure_1pct/run-5/checkpoint-114
+_electrasmall_procedure_mimiciii_ct_procedure_1pct,35.60%,/bmrNAS/people/jmz/models/rales/classification_eff/_electrasmall_procedure_mimiciii_ct_procedure_1pct/run-9/checkpoint-19
+_radbert1_mimiciii_ct_procedure_1pct,37.75%,/bmrNAS/people/jmz/models/rales/classification_eff/_radbert1_mimiciii_ct_procedure_1pct/run-9/checkpoint-57
+_electralarge_procedure_mimiciii_ct_procedure_1pct,35.60%,/bmrNAS/people/jmz/models/rales/classification_eff/_electralarge_procedure_mimiciii_ct_procedure_1pct/run-6/checkpoint-19
+_radbert2_mimiciii_ct_procedure_1pct,52.01%,/bmrNAS/people/jmz/models/rales/classification_eff/_radbert2_mimiciii_ct_procedure_1pct/run-8/checkpoint-95
+_robertabase_procedure_mimiciii_ct_procedure_1pct,39.64%,/bmrNAS/people/jmz/models/rales/classification_eff/_robertabase_procedure_mimiciii_ct_procedure_1pct/run-1/checkpoint-76
+_pubmedbert_base_mimiciii_ct_procedure_1pct,40.40%,/bmrNAS/people/jmz/models/rales/classification_eff/_pubmedbert_base_mimiciii_ct_procedure_1pct/run-3/checkpoint-114
+_gatortron_mimiciii_ct_procedure_1pct,55.37%,/bmrNAS/people/jmz/models/rales/classification_eff/_gatortron_mimiciii_ct_procedure_1pct/run-0/checkpoint-76
+_bioclinicalbert_mimiciii_ct_procedure_1pct,45.17%,/bmrNAS/people/jmz/models/rales/classification_eff/_bioclinicalbert_mimiciii_ct_procedure_1pct/run-8/checkpoint-95
+_deberta-v3-large_mimiciii_ct_procedure_1pct,38.88%,/bmrNAS/people/jmz/models/rales/classification_eff/_deberta-v3-large_mimiciii_ct_procedure_1pct/run-4/checkpoint-95
+_bertlarge_procedure_mimiciii_ct_procedure_1pct,40.27%,/bmrNAS/people/jmz/models/rales/classification_eff/_bertlarge_procedure_mimiciii_ct_procedure_1pct/run-3/checkpoint-114
+_bertbase_procedure_mimiciii_ct_procedure_1pct,48.10%,/bmrNAS/people/jmz/models/rales/classification_eff/_bertbase_procedure_mimiciii_ct_procedure_1pct/run-4/checkpoint-95
+_biolinkbertbase_procedureeff_mimiciii_ct_procedure_1pct,35.60%,/bmrNAS/people/jmz/models/rales/classification_eff/_biolinkbertbase_procedureeff_mimiciii_ct_procedure_1pct/run-8/checkpoint-19

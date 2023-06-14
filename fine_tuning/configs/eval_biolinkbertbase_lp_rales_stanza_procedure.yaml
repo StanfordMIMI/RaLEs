@@ -1,0 +1,7 @@
+eval_name: biolinkbertbase
+model_name_or_path: michiyasunaga/BioLinkBERT-base
+tokenizer_path: michiyasunaga/BioLinkBERT-base
+cache_dir: /PATH_TO//models/transformers_downloads/
+eval_datasets: ['stanza_ner','mimiciii_ct_procedure']
+output_dir: '../results/lp/'
+linear_probe: True

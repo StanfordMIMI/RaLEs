@@ -1,0 +1,17 @@
+,best_metric,best_subdir
+bertlarge,87.08%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_bertlarge_2
+biolinkbertlarge,88.98%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_biolinkbertlarge_2
+debertav3base,89.12%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_debertav3base_2
+electrabase,86.54%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_electrabase_2
+electralarge,87.84%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_electralarge_2
+electrasmall,86.31%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_electrasmall_2
+robertalarge,84.73%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_robertalarge_0
+biolinkbertbase,84.32%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_biolinkbertbase_2
+robertabase,81.21%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_robertabase_0
+radbert2,88.94%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_radbert2_2
+gatortron,89.64%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_gatortron_0
+bertbase,85.42%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_bertbase_2
+pubmedbert,88.16%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_pubmedbert_0
+debertav3large,88.25%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_debertav3large_0
+radbert1,85.83%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_radbert1_0
+bioclinicalbert,86.55%,/bmrNAS/people/jmz/models/rales/dygiepp/radgraph10pct_bioclinicalbert_2

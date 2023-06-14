@@ -1,0 +1,6 @@
+eval_name: deberta-v3-large
+model_name_or_path: microsoft/deberta-v3-large
+tokenizer_path: microsoft/deberta-v3-large
+cache_dir: /PATH_TO//models/transformers_downloads/
+eval_datasets: ['stanza_ner_10pct', 'stanza_ner_1pct']
+output_dir: '../results/ner/'
