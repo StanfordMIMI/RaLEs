@@ -1,0 +1,19 @@
+includes:
+  - config/RRG/biomed-roberta-baseline-mimic.yml
+name: rrg_padchest
+dataset:
+  image:
+    root: data/RRG/indiana/
+    file: image.tok
+    image_path: data/images/
+  seq:
+    root: data/RRG/indiana/
+    file: impression.tok
+    tokenizer: allenai/biomed_roberta_base
+    tokenizer_max_len: 90
+    source: tgt
+
+trainor:
+  batch_size: 32
+  optim_params:
+    lr: 0.0001
