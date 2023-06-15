@@ -1,0 +1,27 @@
+includes:
+  - config/RRS/baseline-transformer-mimic.yml
+
+name: rrs_mimic
+ckpt_dir: ckpt
+
+dataset:
+  proto: Seq2Seq
+  src:
+    root: data/RRS/mimic-cxr/
+    file: findings.tok
+    tokenizer: allenai/biomed_roberta_base
+    tokenizer_max_len: 128
+    processing: rouge
+  tgt:
+    root: data/RRS/mimic-cxr/
+    file: impression.tok
+    tokenizer: allenai/biomed_roberta_base
+    tokenizer_max_len: 80
+    processing: rouge
+
+model:
+  proto: RRS
+  encoder:
+    proto: allenai/biomed_roberta_base
+  decoder:
+    proto: allenai/biomed_roberta_base
