@@ -1,14 +1,12 @@
-import spacy
-import pandas as pd
-
-
 import os
 import json
 import csv
 
 import spacy
+import scispacy
 
-DIRECTORY = "data/chemprot"
+DIRECTORY = "dygiepp/data/chemprot"
+RAW_SUBDIRECTORY = "/raw_data/chemprot_test_gs/"
 PROCESSED_SUBDIRECTORY = "/processed_data/"
 nlp = spacy.load("en_core_sci_sm")
 
@@ -93,7 +91,6 @@ def read_entities(file_name):
 def save_entities_info(entities_dict, results):
     special_case = 0  # Spacy did not successfully tokenize this sentence
     regular_case = 0  # Spacy did successfully tokenize this sentence
-    merged_case = 0  # Entity token is a substring of Spacy token.
     for file_id in results:
         ner = [[] for i in range(len(results[file_id]['sentences']))]  # Create a list of lists equal to number of setences in text
         term_location = {}  # Create a map of term number of start index, end index, and line number of that term
@@ -116,25 +113,14 @@ def save_entities_info(entities_dict, results):
                     'end_index': end_index,
                     'line_index': end_token_info['line_index']
                 }
-                if token["text"] != start_token_info["text"]:
-                    print(token["text"])
-                    print(start_token_info["text"])
-                    print()
-                    merged_case += 1
-                else:
-                    regular_case += 1
+                regular_case += 1
             else:
                 special_case += 1
         #ner = sorted(ner, key=lambda x: x[0])
         results[file_id]['ner'] = ner
         results[file_id]['term_location'] = term_location
 
-    total = special_case + regular_case + merged_case
-    frac_discarded = special_case / total
-    frac_merged = merged_case / total
-    # Throw out cases where the token didn't line up with an entity boundary.
-    print(f"Fraction entities discarded due to entity boundary / token index mismatch: {frac_discarded:0.4f}")
-    print(f"Fraction entities where entity token is substring of Spacy token: {frac_merged:0.4f}")
+    print ("Fraction of annotations thrown out: " + str((special_case)/(special_case + regular_case)))
 
 
 def read_relations(file_name):
@@ -175,65 +161,21 @@ def save_relations(relations_dict, results):
                     different_lines += 1
         #relation = sorted(relation, key=lambda x: x[0])
         results[file_id]['relations'] = relation
-    frac_cross_sent = different_lines / (different_lines + same_lines)
-
-    # Remove relations that cross sentence boundaries.
-    print(f"Fraction cross-sentence relations (discarded): {frac_cross_sent:0.4f}")
+    print("Different lines percentage: " + str(different_lines/(different_lines + same_lines)))
 
 
-def process_fold(fold):
-    print(f"Processing fold {fold}.")
-    raw_subdirectory = f"/raw_data/ChemProt_Corpus/chemprot_{fold}/"
-    abstracts = pd.read_table(DIRECTORY + raw_subdirectory + f'chemprot_{fold}_abstracts.tsv')
-    entities = pd.read_table(DIRECTORY + raw_subdirectory + f'chemprot_{fold}_entities.tsv')
-    relations = pd.read_table(DIRECTORY + raw_subdirectory + f'chemprot_{fold}_relations.tsv')
+abstracts_dict = read_abstract(DIRECTORY + RAW_SUBDIRECTORY + 'chemprot_test_abstracts_gs.tsv')
+results = save_abstract_info(abstracts_dict)
+entities_dict = read_entities(DIRECTORY + RAW_SUBDIRECTORY + 'chemprot_test_entities_gs.tsv')
+save_entities_info(entities_dict, results)
+relations_dict = read_relations(DIRECTORY + RAW_SUBDIRECTORY + 'chemprot_test_relations_gs.tsv')
+save_relations(relations_dict, results)
 
-
-# def main():
-#     for fold in ["training", "development", "test"]:
-#         process_fold(fold)
-
-
-# if __name__ == "__main__":
-#     main()
-
-
-fold = "training"
-print(f"Processing fold {fold}.")
-raw_subdirectory = f"/raw_data/ChemProt_Corpus/chemprot_{fold}/"
-df_abstracts = pd.read_table(DIRECTORY + raw_subdirectory + f'chemprot_{fold}_abstracts.tsv',
-                             header=None, names=["doc_key", "title", "abstract"])
-df_entities = pd.read_table(DIRECTORY + raw_subdirectory + f'chemprot_{fold}_entities.tsv',
-                            header=None, names=["doc_key", "entity_id", "label", "char_start", "char_end", "text"])
-df_relations = pd.read_table(DIRECTORY + raw_subdirectory + f'chemprot_{fold}_relations.tsv',
-                             header=None, names=["doc_key", "cpr_group", "eval_type", "label", "arg1", "arg2"])
-
-####################
-
-# NOTE: Right index is exclusive for both the chemprot data and for spacy.
-
-# for _, abstract in df_abstracts.iterrows():
-row = df_abstracts.iloc[1]
-doc = row["title"] + " " + row["abstract"]
-doc_key = row["doc_key"]
-entities = df_entities.query(f"doc_key == '{doc_key}'")
-relations = df_relations.query(f"doc_key == '{doc_key}'")
-
-####################
-
-processed = nlp(doc)
-
-for sent in processed.sents:
-    pass
-
-
-def in_sentence(ent_row, sent):
-    good_beginning = ent_row["char_start"] >= sent.start_char
-    good_end = ent_row["char_end"] <= sent.end_char
-    return good_beginning and good_end
-
-# Get the entities
-for _, ent_row in entities.iterrows():
-    if not in_sentence(ent_row, sent):
-        continue
-    break
+with open(DIRECTORY + PROCESSED_SUBDIRECTORY + 'test.jsonl', 'w') as outfile:
+    for file_id in results:
+        print(json.dumps({
+            'doc_key': results[file_id].get('doc_key'),
+            'sentences': results[file_id].get('sentences'),
+            'ner': results[file_id].get('ner'),
+            'relations': results[file_id].get('relations'),
+        }), file=outfile)
