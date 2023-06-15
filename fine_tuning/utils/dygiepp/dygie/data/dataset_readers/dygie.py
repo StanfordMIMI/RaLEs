@@ -62,7 +62,9 @@ class DyGIEReader(DatasetReader):
         for span, label in sent.ner_dict.items():
             if self._too_long(span):
                 continue
+            
             ix = span_tuples.index(span)
+            
             ner_labels[ix] = label
 
         return ner_labels
@@ -199,16 +201,16 @@ class DyGIEReader(DatasetReader):
 
         return Instance(fields)
 
-    @overrides
-    def _instances_from_cache_file(self, cache_filename):
-        with open(cache_filename, "rb") as f:
-            for entry in pkl.load(f):
-                yield entry
+    # @overrides
+    # def _instances_from_cache_file(self, cache_filename):
+    #     with open(cache_filename, "rb") as f:
+    #         for entry in pkl.load(f):
+    #             yield entry
 
-    @overrides
-    def _instances_to_cache_file(self, cache_filename, instances):
-        with open(cache_filename, "wb") as f:
-            pkl.dump(instances, f, protocol=pkl.HIGHEST_PROTOCOL)
+    # @overrides
+    # def _instances_to_cache_file(self, cache_filename, instances):
+    #     with open(cache_filename, "wb") as f:
+    #         pkl.dump(instances, f, protocol=pkl.HIGHEST_PROTOCOL)
 
     @staticmethod
     def _normalize_word(word):
