@@ -1,3 +1,3 @@
-[submodule "fine_tuning/utils/dygiepp"]
-	path = fine_tuning/utils/dygiepp
+[submodule "dygiepp"]
+	path = dygiepp
 	url = https://github.com/dwadden/dygiepp.git
