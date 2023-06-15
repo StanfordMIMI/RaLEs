@@ -26,7 +26,7 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
-from constants import TRANSFORMERS_DOWNLOAD_PATH, MIMIC_PROTOCOLING_DIR
+from constants import TRANSFORMERS_DOWNLOAD_PATH, MIMIC_PROTOCOLING_DIR, STANFORD_BODYCT_PROTOCOL_DIR
 from omegaconf import OmegaConf, dictconfig
 import wandb
 
@@ -60,6 +60,7 @@ def get_default_config():
 
     eval_batch_size: 512
     dataset_text_col: 'order_text'
+    linear_probe: False
     """
     return OmegaConf.create(default_config)
 
@@ -78,6 +79,13 @@ def get_data_files_by_task(task):
     """
     Get the data files for a given task
     """
+    if task == 'stanford_body_ct_protocol_25':
+        text_col = 'order_text'
+        label_col = 'procedure'
+        to_remove = []
+        return {'train': os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'top25_ct_protocols_train.csv'),
+                'val':os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'top25_ct_protocols_val.csv'),
+                'test':os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'top25_ct_protocols_test.csv')}, text_col, label_col, to_remove
     if task == 'mimiciii_ct_procedure':
         text_col = 'indication'
         label_col = 'procedure_label'
@@ -85,7 +93,20 @@ def get_data_files_by_task(task):
         return {'train': os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_train.csv'), 
                 'val':   os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_dev.csv'), 
                 'test': os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_test.csv')}, text_col, label_col, to_remove
-                
+    if task == 'mimiciii_ct_procedure_1pct':
+        text_col = 'indication'
+        label_col = 'procedure_label'
+        to_remove = ['ROW_ID']
+        return {'train': os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_train_1pct.csv'), 
+                'val':   os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_dev_1pct.csv'), 
+                'test': os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_test.csv')}, text_col, label_col, to_remove
+    if task == 'mimiciii_ct_procedure_10pct':
+        text_col = 'indication'
+        label_col = 'procedure_label'
+        to_remove = ['ROW_ID']
+        return {'train': os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_train_10pct.csv'), 
+                'val':   os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_dev_10pct.csv'), 
+                'test': os.path.join(MIMIC_PROTOCOLING_DIR, 'mimiciii_ct_procedure_test.csv')}, text_col, label_col, to_remove
     else:
         raise NotImplementedError('Loading data from {} is not implemented'.format(task))
 
@@ -97,7 +118,7 @@ def do_document_classification_rales(task, config=None):
         config = get_default_config()
     else:
         config = parse_config(config)
-
+    
     config.data_files, text_col, label_col, cols_to_remove = get_data_files_by_task(task)
     # set seed
     set_seed(config.seed)
@@ -123,9 +144,18 @@ def do_document_classification_rales(task, config=None):
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
     # load model
-    def init_model():
-        return AutoModelForSequenceClassification.from_pretrained(config.model_name_or_path, cache_dir=config.cache_dir, num_labels=n_labels, label2id=label2id, id2label=id2label)
-
+    def init_model(lp=config.linear_probe):
+        model = AutoModelForSequenceClassification.from_pretrained(config.model_name_or_path, 
+                                                        cache_dir=config.cache_dir, 
+                                                        num_labels=n_labels, 
+                                                        label2id=label2id, 
+                                                        id2label=id2label, 
+                                                        ignore_mismatched_sizes=True)
+        if lp:
+            for param in model.base_model.parameters():
+                param.requires_grad = False
+        return model
+    
     # load metrics
     accuracy = evaluate.load('accuracy')
     precision = evaluate.load('precision')
@@ -176,7 +206,7 @@ def do_document_classification_rales(task, config=None):
         return {
             "learning_rate": trial.suggest_float("learning_rate", 1e-6, 1e-4, log=True),
             "num_train_epochs": trial.suggest_int("num_train_epochs", 3, 6),
-            "per_device_train_batch_size": trial.suggest_categorical("per_device_train_batch_size", [32,64,128]),
+            "per_device_train_batch_size": trial.suggest_categorical("per_device_train_batch_size", [32]),
             "weight_decay": trial.suggest_float("weight_decay", 1e-12, 1e-1, log=True)
         }
 
@@ -187,6 +217,7 @@ def do_document_classification_rales(task, config=None):
         compute_objective= lambda metrics: metrics['eval_accuracy'],
         study_name= f'{config.output_dir}_{config.eval_name}_{task}'
         )
+    
 
     # evaluate best model
     # trainer.test(best_model)

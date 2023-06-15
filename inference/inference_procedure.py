@@ -67,40 +67,6 @@ def get_pipeline(model_path, dataset_name, output_type):
                     aggregation_strategy='first')
     return pipeline, pretrained_model, tokenizer
 
-def tokenize_and_align_labels(examples, tokenizer, text_column_name, label_column_name, max_seq_length, label_to_id, b_to_i_label,
-                              label_all_tokens=False):
-    #TODO: fix to import from fine-tuning script
-    tokenized_inputs = tokenizer(
-        examples[text_column_name],
-        padding=False,
-        truncation=True,
-        max_length=max_seq_length,
-        is_split_into_words=True,
-    )
-    labels = []
-    for i, label in enumerate(examples[label_column_name]):
-        word_ids = tokenized_inputs.word_ids(batch_index=i)
-        previous_word_idx = None
-        label_ids = []
-        for word_idx in word_ids:
-            # Special tokens have a word id that is None. We set the label to -100 so they are automatically
-            # ignored in the loss function.
-            if word_idx is None:
-                label_ids.append(-100)
-            # We set the label for the first token of each word.
-            elif word_idx != previous_word_idx:
-                label_ids.append(label_to_id[label[word_idx]])
-            else:
-                if label_all_tokens:
-                    label_ids.append(b_to_i_label[label_to_id[label[word_idx]]])
-                else:
-                    label_ids.append(-100)
-            previous_word_idx = word_idx
-
-        labels.append(label_ids)
-    tokenized_inputs["labels"] = labels
-    return tokenized_inputs
-
 def load_data(fpaths):
     """
     TODO: import from fine-tuning script instead
@@ -205,64 +171,18 @@ def main():
 
     dataset = load_data(data_files)
     dataset = dataset[args.data_split]
-
-    data_collator = DataCollatorForTokenClassification(tokenizer)
-    label_list = [pipeline.model.config.id2label[k] for k in pipeline.model.config.id2label]
-    b_to_i_label = []
-    for idx, label in enumerate(label_list):
-        if label.startswith("B-") and label.replace("B-", "I-") in label_list:
-            b_to_i_label.append(label_list.index(label.replace("B-", "I-")))
-        else:
-            b_to_i_label.append(idx)
-    data_collator = DataCollatorForTokenClassification(tokenizer)
-    dataset = dataset.map(
-        tokenize_and_align_labels,
-        fn_kwargs={
-            'tokenizer': pipeline.tokenizer,
-            'text_column_name': text_col,
-            'label_column_name': label_col,
-            'max_seq_length': None,
-            'label_to_id': pipeline.model.config.label2id,
-            'b_to_i_label': b_to_i_label,
-            'label_all_tokens': False,
-        },
-        batched=True,
-        desc="Running tokenizer on validation dataset",
-        )
-    dataset = dataset.remove_columns(['ner','words'])
     
-    dl = DataLoader(dataset, 
-                    sampler=SequentialSampler(dataset),
-                    batch_size=1,
-                    collate_fn=data_collator)
-    model.to('cuda:0')
-    preds = {}
-    preds['id2labeldict'] = pipeline.model.config.id2label
-    for i,batch in enumerate(dl):
-        preds[i] = {}
-        preds[i]['input_ids'] = batch['input_ids'].numpy().tolist()[0]
-        preds[i]['labels'] = batch['labels'].numpy().tolist()[0]
-        
-        output = model(**{k:v.to('cuda:0') for k,v in batch.items()})
-        logits = output.logits[0]
-        softmax = F.softmax(logits, dim=1)
-        preds[i]['logits'] = logits.cpu().detach().numpy()
-        preds[i]['softmax'] = softmax.cpu().detach().numpy()
-        preds[i]['pred_labels'] = softmax.argmax(axis=1).tolist()
+    predictions = pipeline(dataset[text_col])
+    row_ids = dataset[id_col]
 
-    # if id_col is not None:
-    #     row_ids = dataset[id_col]
-    # else:
-    #     row_ids = list(range(len(dataset)))
-
-    # preds_dict = {row_id:pred for row_id, pred in zip(row_ids, predictions)}
+    preds_dict = {row_id:pred for row_id, pred in zip(row_ids, predictions)}
 
     # Save predictions
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
     with open(os.path.join(args.output_dir, 'predictions.json'), 'w') as f:
-        json_string = json.dumps(preds, cls=NumpyEncoder)
-        f.write(json_string)
+        json.dump(preds_dict, f)
+    
     
 
 if __name__=='__main__':
