@@ -5,12 +5,14 @@
 # entire process and cleans up a few other corner cases.
 # https://x3ro.de/2013/09/01/Integrating-a-submodule-into-the-parent-repository.html
 
-function usage() {
-  echo "Merge a submodule into a repo, retaining file history."
-  echo "Usage: $0 <submodule-name>"
+function usage(){
+  echo "Usage: $0 <submodule-name> [<submodule-branch>]"
+  echo "Merge a single branch of <submodule-name> into a repo, retaining file history."
+  echo "If provided then <submodule-branch> will be merged, otherwise master."
   echo ""
   echo "options:"
   echo "  -h, --help                Print this message"
+  echo "  -f, --force               Skip the warning message (use with caution)"
   echo "  -v, --verbose             Display verbose output"
 }
 
@@ -28,7 +30,7 @@ function warn() {
   cat << EOF
     This script will convert your "${sub}" git submodule into
     a simple subdirectory in the parent repository while retaining all
-    contents and file history.
+    contents, file history and its own submodules.
 
     The script will:
       * delete the ${sub} submodule configuration from .gitmodules and
@@ -37,7 +39,13 @@ function warn() {
         paths are prefixed by ${path}.
         This ensures that git log will correctly follow the original file
         history.
+      * merge the submodule's tags into its parent repository and commit
+        each tag merge individually.
+        (only those tags are considered which are reachable from
+         the tip of ${sub}/${branch})
       * merge the submodule into its parent repository and commit it.
+      * reinstate any of the submodule's own submodules as part of the parent
+        repository
 
     NOTE: This script might completely garble your repository, so PLEASE apply
     this only to a fresh clone of the repository where it does not matter if
@@ -53,14 +61,34 @@ EOF
 function git_version_lte() {
   OP_VERSION=$(printf "%03d%03d%03d%03d" $(echo "$1" | tr '.' '\n' | head -n 4))
   GIT_VERSION=$(git version)
-  GIT_VERSION=$(printf "%03d%03d%03d%03d" $(echo "${GIT_VERSION#git version}" | tr '.' '\n' | head -n 4))
+  GIT_VERSION=$(printf "%03d%03d%03d%03d" $(echo "${GIT_VERSION#git version }" | sed -E "s/([0-9.]*).*/\1/" | tr '.' '\n' | head -n 4))
   echo -e "${GIT_VERSION}\n${OP_VERSION}" | sort | head -n1
-  [ ${OP_VERSION} -le ${GIT_VERSION} ]
+  [ ${GIT_VERSION} -le ${OP_VERSION} ]
+}
+
+# Convert a url to an absolute url
+#
+# Parameters:
+#  $1: The url to check
+#  $2: The base url to use if $1 is a relative path
+#
+# Returns an absolute url
+function absolute_url {
+  local url=$1
+  local base=$2
+
+  if [[ $url =~ \.\. ]]; then
+    echo "$base/$(basename $url)"
+  else
+    echo $url
+  fi
 }
 
 function main() {
 
-  warn
+  if [ "${skip_warn}" != "true" ]; then
+	warn
+  fi
 
   if [ "${verbose}" == "true" ]; then
     set -x
@@ -78,16 +106,18 @@ function main() {
 
   # Rewrite submodule history
   local tmpdir="$(mktemp -d -t submodule-rewrite-XXXXXX)"
-  git clone "${url}" "${tmpdir}"
+  git clone -b "${branch}" "${url}" "${tmpdir}"
+  # Be sure to get all tags as well as we will mege them later on
+  git fetch --tags
   pushd "${tmpdir}"
   local tab="$(printf '\t')"
-  local filter="git ls-files -s | sed \"s/${tab}/${tab}${path}\//\" | GIT_INDEX_FILE=\${GIT_INDEX_FILE}.new git update-index --index-info && mv \${GIT_INDEX_FILE}.new \${GIT_INDEX_FILE}"
+  local filter="git ls-files -s | sed \"s:${tab}:${tab}${path}/:\" | GIT_INDEX_FILE=\${GIT_INDEX_FILE}.new git update-index --index-info && mv \${GIT_INDEX_FILE}.new \${GIT_INDEX_FILE} || true"
   git filter-branch --index-filter "${filter}" HEAD
   popd
 
   # Merge in rewritten submodule history
   git remote add "${sub}" "${tmpdir}"
-  git fetch "${sub}"
+  git fetch --tags "${sub}"
 
   if git_version_lte 2.8.4
   then
@@ -98,14 +128,46 @@ function main() {
     ALLOW_UNRELATED_HISTORIES="--allow-unrelated-histories"
   fi
 
-  git merge -s ours --no-commit ${ALLOW_UNRELATED_HISTORIES} "${sub}/master"
+  # First merge all tags
+  # We only consider tags reachable from the specified submodule's
+  # branch. All other tags will be ignored.
+  for submodule_tag in $(git tag --list --merged "${sub}/${branch}")
+  do
+    git merge -s ours -m "Merge submodule tag ${submodule_tag} for ${sub}/${branch}" ${ALLOW_UNRELATED_HISTORIES} "${submodule_tag}"
+  done
+
+  # Now merge actual files
+  git merge -s ours --no-commit ${ALLOW_UNRELATED_HISTORIES} "${sub}/${branch}"
+
   rm -rf tmpdir
 
   # Add submodule content
-  git clone "${url}" "${path}"
-  rm -rf "${path}/.git"
+  git clone -b "${branch}" "${url}" "${path}"
+
+  # Transfer its own submodules to the parent
+  add_submod_cmds=""
+  if [ -f ${path}/.gitmodules ]; then
+    sub_names=$(git config -f ${path}/.gitmodules --get-regex path | sed 's/.* \(.*\)$/\1/g' || true)
+
+    for sub_name in ${sub_names}; do
+      sub_branch=$(git config -f ${path}/.gitmodules --get "submodule.${sub_name}.branch") || true
+      [ -n "${sub_branch}" ] && sub_branch="-b ${sub_branch}"
+      sub_path=$(git config -f ${path}/.gitmodules --get "submodule.${sub_name}.path")
+      sub_url=$(git config -f ${path}/.gitmodules --get "submodule.${sub_name}.url")
+
+      # remove the sub-submodule (which should be empty) and cache the command to reinstate it
+      rmdir ${path}/${sub_path}
+      add_submod_cmds="$add_submod_cmds git submodule add ${sub_branch} --name ${sub_name} -- ${sub_url} ${path}/${sub_path} ; "
+    done
+  fi
+
+  rm -rf "${path}/.git" "${path}/.gitmodules"
   git add "${path}"
-  git commit -m "Merge submodule contents for ${sub}"
+  if [ -n "${add_submod_cmds}" ]; then
+    bash -c "${add_submod_cmds}"
+  fi
+
+  git commit -m "Merge submodule contents for ${sub}/${branch}"
   git config -f .git/config --remove-section "remote.${sub}"
 
   set +x
@@ -115,6 +177,7 @@ function main() {
 set -euo pipefail
 
 declare verbose=false
+declare skip_warn=false
 while [ $# -gt 0 ]; do
     case "$1" in
         (-h|--help)
@@ -124,6 +187,9 @@ while [ $# -gt 0 ]; do
         (-v|--verbose)
             verbose=true
             ;;
+	(-f|--force)
+	    skip_warn=true
+	    ;;
         (*)
             break
             ;;
@@ -132,6 +198,7 @@ while [ $# -gt 0 ]; do
 done
 
 declare sub="${1:-}"
+declare branch="${2:-master}"
 
 if [ -z "${sub}" ]; then
   >&2 echo "Error: No submodule specified"
@@ -140,6 +207,10 @@ if [ -z "${sub}" ]; then
 fi
 
 shift
+
+if [ -n "${1:-}" ]; then
+  shift
+fi
 
 if [ -n "${1:-}" ]; then
   >&2 echo "Error: Unknown option: ${1:-}"
@@ -154,10 +225,17 @@ if ! [ -d ".git" ]; then
 fi
 
 declare path="$(git config -f .gitmodules --get "submodule.${sub}.path")"
-declare url="$(git config -f .gitmodules --get "submodule.${sub}.url")"
+declare superproject_dir="$(dirname $(git config --get remote.origin.url))"
+declare url=$(absolute_url $(git config -f .gitmodules --get "submodule.${sub}.url") $superproject_dir)
 
 if [ -z "${path}" ]; then
   >&2 echo "Error: Submodule not found: ${sub}"
+  usage
+  exit 1
+fi
+
+if [ -z "${superproject_dir}" ]; then
+  >&2 echo "Error: Could not determine the remote origin for this superproject: ${superproject_dir}"
   usage
   exit 1
 fi
