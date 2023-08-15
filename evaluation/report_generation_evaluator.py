@@ -15,6 +15,7 @@ SCORER_NAME_TO_CLASS = {
     "chexbert": CheXbert(),
     "rouge2":Rouge2()
 }
+<<<<<<< HEAD
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -26,6 +27,10 @@ def parse_args():
 
 class ReportGenerationEvaluator:
     def __init__(self, scorers=['bleu','rougel','bertscore','f1radgraph','chexbert']):
+=======
+class ReportGenerationEvaluator:
+    def __init__(self, scorers=['bleu','rougel','bertscore','f1radgraph']):
+>>>>>>> 99647f8 (clarify hyps vs refs)
         self.scorers = {}
         
         for scorer_name in scorers:
