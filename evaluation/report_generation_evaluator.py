@@ -10,7 +10,7 @@ SCORER_NAME_TO_CLASS = {
     "bertscore": BertScore(),
     "f1radgraph": F1RadGraph(reward_level="partial")
 }
-class ReportEvaluator:
+class ReportGenerationEvaluator:
     def __init__(self, scorers=['bleu','rougel','bertscore','f1radgraph']):
         self.scorers = {}
         
@@ -22,7 +22,7 @@ class ReportEvaluator:
                     raise NotImplementedError(f'scorer of type {scorer_name} not implemented')
 
     def evaluate(self, hypotheses, references):
-        assert len(hypotheses) == len(references), f'Length of hypotheses {len(hypotheses)} and references {len(references)} must match. '
+        assert len(hypotheses) == len(references), f'Length of hypotheses (i.e. generations) {len(hypotheses)} and references (i.e. ground truths) {len(references)} must match. '
         
         scores = {k:None for k in self.scorers.keys()}
         
@@ -44,5 +44,5 @@ if  __name__=='__main__':
     print(len(generations))
     print(len(ground_truths))
 
-    evaluator = ReportEvaluator()
+    evaluator = ReportGenerationEvaluator()
     print(evaluator.evaluate(generations, ground_truths))
