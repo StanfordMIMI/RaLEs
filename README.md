@@ -98,21 +98,3 @@ For the current leaderboard, visit [RaLEs Benchmark Leaderboard](https://ralesbe
   year = {2023}
 }
 ```
-
-# Install instructions
-First create and activate a conda environment:
-```
-conda create -n rales python=3.6.12
-conda activate rales
-```
-
-Once created, we recommend first installing pytorch 1.9.0 with your [appropriate cuda version](https://pytorch.org/get-started/previous-versions/) e.g.:
-```
-conda install pytorch==1.9.0 torchvision==0.10.0 torchaudio==0.9.0 cudatoolkit=11.3 -c pytorch -c conda-forge
-```
-
-Finally, install additional requirements:
-```
-while read requirement; do conda install --yes $requirement || pip install $requirement; done < requirements.txt
-```
-
