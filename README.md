@@ -1,49 +1,34 @@
 # Overview
-This repository contains code and results for RaLEs: Radiology Language Evaluations (manuscript under consideration).
+This repository contains code and results for RaLEs: Radiology Language Evaluations (manuscript under consideration). [Check out the leaderboard](https://ralesbenchmark.github.io)!
 
 # Contents
 The repository is organized in 5 modules, each contained within its own directory: 
 | Module  | Purpose |
 | ------------- | ------------- |
-| datasets  | Provides instructions for RaLEs dataset download and preprocessing  |
-| fine_tuning  | Contains command-line interface code for fine-tuning a model for a given RaLEs task  |
-| inference | Provides code for performing inference on RaLEs tasks given a pre-trained model |
-| evaluation | Provides code for obtaining evaluation metrics based on model predictions for RaLEs tasks |
-| results | Includes summary of results of current RaLEs benchmark 
-
-Here's the updated `README.md` content:
-
----
-
-# Overview
-This repository contains code and results for RaLEs: Radiology Language Evaluations (manuscript under consideration).
-
-# Contents
-The repository is organized in 5 modules, each contained within its own directory: 
-| Module  | Purpose |
-| ------------- | ------------- |
-| datasets  | Provides instructions for RaLEs dataset download and preprocessing  |
-| fine_tuning  | Contains command-line interface code for fine-tuning a model for a given RaLEs task  |
-| inference | Provides code for performing inference on RaLEs tasks given a pre-trained model |
-| evaluation | Provides code for obtaining evaluation metrics based on model predictions for RaLEs tasks |
-| results | Includes summary of results of current RaLEs benchmark 
+| [datasets](datasets)  | Provides instructions for RaLEs dataset download and preprocessing  |
+| [fine_tuning](fine_tuning)  | Contains command-line interface code for fine-tuning a model for a given RaLEs task  |
+| [inference](inference) | Provides code for performing inference on RaLEs tasks given a pre-trained model |
+| [evaluation](evaluation) | Provides code for obtaining evaluation metrics based on model predictions for RaLEs tasks |
+| [results](results) | Includes summary of results of current RaLEs benchmark 
 
 ## Usage
 
-### 1. Setup
-- **Environment Setup**: Create and activate a conda environment:
-  ```bash
-  conda create -n rales python=3.8.13
-  conda activate rales
-  ```
-- **Install PyTorch**: Install pytorch 1.12.1 with the appropriate CUDA version. Check [PyTorch's previous versions](https://pytorch.org/get-started/previous-versions/) for compatibility:
-  ```bash
-  pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
-  ```
-- **Install Additional Dependencies**: Install other required Python packages:
-  ```bash
-  while read requirement; do conda install --yes $requirement || pip install $requirement; done < requirements.txt
-  ```
+### 1. Install instructions
+First create and activate a conda environment:
+```
+conda create -n rales python=3.8.13
+conda activate rales
+```
+
+Once created, we recommend first installing pytorch with your [appropriate cuda version](https://pytorch.org/get-started/previous-versions/) e.g.:
+```
+pip install torch torchvision torchaudio 
+```
+
+Finally, install additional requirements:
+```
+while read requirement; do conda install --yes $requirement || pip install $requirement; done < requirements.txt
+```
 
 ### 2. Data Preparation
 Navigate to the `datasets` directory and follow the instructions in the [datasets README](datasets/README.md) for downloading and preprocessing the RaLEs datasets.
@@ -62,6 +47,33 @@ Check the `results` directory for a summary of benchmark results for the RaLEs t
 
 For the current leaderboard, visit [RaLEs Benchmark Leaderboard](https://ralesbenchmark.github.io).
 
----
+## Frequently Asked Questions (FAQs)
 
-You can copy and paste the above content directly into your repository's `README.md` file. Let me know if there's anything else you'd like assistance with!
+<details>
+  <summary>1. What is the purpose of the RaLEs benchmark?</summary>
+  
+  The RaLEs benchmark is designed to evaluate models on various radiology language tasks. It provides a standardized dataset and evaluation metrics to compare the performance of different models in a consistent manner.
+  
+</details>
+
+<details>
+  <summary>2. How can I submit my model to the leaderboard?</summary>
+  
+  To submit your model to the leaderboard, follow the submission process detailed in the [results README](results/README.md). Ensure you provide all the required details in the submission form.
+  
+</details>
+
+<details>
+  <summary>3. Where can I find the datasets used in the benchmark?</summary>
+  
+  The datasets can be accessed from the [datasets directory](datasets/README.md). Detailed instructions on downloading and preprocessing each dataset are provided there.
+  
+</details>
+
+<details>
+  <summary>4. I'd like to contribute a dataset, how can I do that?</summary>
+  
+  New dataset submissions are more than welcome. Full instructions for how to format and submit a dataset can be found in the [datasets directory](datasets/README.mddatasets/README.md#adding-a-dataset-to-the-rales-benchmark). 
+  
+</details>
+
