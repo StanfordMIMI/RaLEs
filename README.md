@@ -73,7 +73,7 @@ For the current leaderboard, visit [RaLEs Benchmark Leaderboard](https://ralesbe
 <details>
   <summary>4. I'd like to contribute a dataset, how can I do that?</summary>
   
-  New dataset submissions are more than welcome. Full instructions for how to format and submit a dataset can be found in the [datasets directory](datasets/README.mddatasets/README.md#adding-a-dataset-to-the-rales-benchmark). 
+  New dataset submissions are more than welcome. Full instructions for how to format and submit a dataset can be found in the [datasets directory](datasets/README.md#adding-a-dataset-to-the-rales-benchmark). 
   
 </details>
 
