@@ -15,7 +15,6 @@ SCORER_NAME_TO_CLASS = {
     "chexbert": CheXbert(),
     "rouge2":Rouge2()
 }
-<<<<<<< HEAD
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -27,10 +26,6 @@ def parse_args():
 
 class ReportGenerationEvaluator:
     def __init__(self, scorers=['bleu','rougel','bertscore','f1radgraph','chexbert']):
-=======
-class ReportGenerationEvaluator:
-    def __init__(self, scorers=['bleu','rougel','bertscore','f1radgraph']):
->>>>>>> 99647f8 (clarify hyps vs refs)
         self.scorers = {}
         
         for scorer_name in scorers:
@@ -69,7 +64,6 @@ if  __name__=='__main__':
     ground_truths = load_dataset('json', data_files={'data': args.reference_filepath})['data']['impression']
 
     evaluator = ReportGenerationEvaluator(scorers=args.scorers)
-
     if len(generations) > 1000: #do batched evaluation and average at the end
         lens = []
         scores = []
@@ -85,4 +79,3 @@ if  __name__=='__main__':
     else:
         evaluator = ReportGenerationEvaluator(scorers=args.scorers)
         print({k:f'{v:.3f}' for k,v in evaluator.evaluate(generations, ground_truths).items()})
-        
