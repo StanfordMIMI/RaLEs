@@ -18,9 +18,9 @@ conda create -n rales python=3.8.13
 conda activate rales
 ```
 
-Once created, we recommend first installing pytorch 1.12.1 with your [appropriate cuda version](https://pytorch.org/get-started/previous-versions/) e.g.:
+Once created, we recommend first installing pytorch with your [appropriate cuda version](https://pytorch.org/get-started/previous-versions/) e.g.:
 ```
-pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
+pip install torch torchvision torchaudio 
 ```
 
 Finally, install additional requirements:
