@@ -79,13 +79,6 @@ def get_data_files_by_task(task):
     """
     Get the data files for a given task
     """
-    if task == 'stanford_body_ct_protocol_25':
-        text_col = 'order_text'
-        label_col = 'procedure'
-        to_remove = []
-        return {'train': os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'top25_ct_protocols_train.csv'),
-                'val':os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'top25_ct_protocols_val.csv'),
-                'test':os.path.join(STANFORD_BODYCT_PROTOCOL_DIR, 'top25_ct_protocols_test.csv')}, text_col, label_col, to_remove
     if task == 'mimiciii_ct_procedure':
         text_col = 'indication'
         label_col = 'procedure_label'
@@ -217,9 +210,5 @@ def do_document_classification_rales(task, config=None):
         compute_objective= lambda metrics: metrics['eval_accuracy'],
         study_name= f'{config.output_dir}_{config.eval_name}_{task}'
         )
-    
-
-    # evaluate best model
-    # trainer.test(best_model)
 if __name__=='__main__':
     main()

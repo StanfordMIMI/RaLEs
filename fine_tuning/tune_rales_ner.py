@@ -56,10 +56,6 @@ from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 from constants import TRANSFORMERS_DOWNLOAD_PATH, RADGRAPH_DIR, STANZA_DIR
 
-# Will error if the minimal version of Transformers is not installed. Remove at your own risks.
-check_min_version("4.22.0.dev0")
-require_version("datasets>=1.8.0", "To fix: pip install -r examples/pytorch/token-classification/requirements.txt")
-
 logger = logging.getLogger(__name__)
 
 os.environ['TRANSFORMERS_CACHE'] = TRANSFORMERS_DOWNLOAD_PATH
@@ -376,11 +372,6 @@ def run_ner(config_mods=None, eval_name=None, task=None):
             use_auth_token=True if model_args.use_auth_token else None,
         )
 
-
-
-    # def init_model():
-    #     return AutoModelForSequenceClassification.from_pretrained(config.model_name_or_path, cache_dir=config.cache_dir, num_labels=n_labels, label2id=label2id, id2label=id2label)
-
     # Tokenizer check: this script requires a fast tokenizer.
     if not isinstance(tokenizer, PreTrainedTokenizerFast):
         raise ValueError(
@@ -609,29 +600,6 @@ def run_ner(config_mods=None, eval_name=None, task=None):
         trainer.log_metrics("eval", metrics)
         trainer.save_metrics("eval", metrics)
 
-    # # Predict
-    # if training_args.do_predict:
-    #     logger.info("*** Predict ***")
-
-    #     predictions, labels, metrics = trainer.predict(predict_dataset, metric_key_prefix="predict")
-    #     predictions = np.argmax(predictions, axis=2)
-
-    #     # Remove ignored index (special tokens)
-    #     true_predictions = [
-    #         [label_list[p] for (p, l) in zip(prediction, label) if l != -100]
-    #         for prediction, label in zip(predictions, labels)
-    #     ]
-
-    #     trainer.log_metrics("predict", metrics)
-    #     trainer.save_metrics("predict", metrics)
-
-    #     # Save predictions
-    #     output_predictions_file = os.path.join(training_args.output_dir, "predictions.txt")
-    #     if trainer.is_world_process_zero():
-    #         with open(output_predictions_file, "w") as writer:
-    #             for prediction in true_predictions:
-    #                 writer.write(" ".join(prediction) + "\n")
-
     kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "token-classification"}
     if data_args.dataset_name is not None:
         kwargs["dataset_tags"] = data_args.dataset_name
@@ -644,23 +612,10 @@ def run_ner(config_mods=None, eval_name=None, task=None):
     
     trainer.create_model_card(**kwargs)
 
-    # train_args = TrainingArguments(
-    #     output_dir=f'{config.output_dir}_{config.eval_name}_{task}',
-    #     overwrite_output_dir=True,
-    #     do_eval=True,
-    #     evaluation_strategy='epoch',
-    #     logging_strategy='epoch',
-    #     save_strategy='epoch',
-    #     save_total_limit=1,
-    #     load_best_model_at_end=True,
-    #     metric_for_best_model='f1_micro',
-    #     per_device_eval_batch_size=config.eval_batch_size,
-    # )
-
 def do_ner_rales(task, config):
     # add the model attributes to arguments for HF argparser compatibility   
     
-    sys.argv = ['eval_rales_ner.py'] 
+    sys.argv = ['tune_rales_ner.py'] 
     sys.argv += ['--model_name_or_path', config['model_name_or_path']]
     sys.argv += ['--tokenizer_name', config['tokenizer_path']]
     sys.argv += ['--cache_dir', config['cache_dir']]
@@ -676,12 +631,6 @@ def do_ner_rales(task, config):
     sys.argv += ['--do_train', '--do_eval']
     if 'linear_probe' in config and config['linear_probe']==True:
         sys.argv += ['--linear_probe']
-    
-    if task == 'radgraph_ner':
-        train_file = os.path.join(RADGRAPH_DIR, 'train_jsonl.json')
-        validation_file = os.path.join(RADGRAPH_DIR, 'dev_jsonl.json')
-        sys.argv += ['--train_file', train_file]
-        sys.argv += ['--validation_file', validation_file]
         
     if task == 'stanza_ner':
         train_file = os.path.join(STANZA_DIR, 'train.json')

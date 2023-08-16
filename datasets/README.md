@@ -1,9 +1,8 @@
-
 ## RaLEs Datasets
 
 **NOTE**: Users with appropriate Physionet credentials (requires MIMIC-III and MIMIC-CXR DUA agreement) can directly download preprocessed datasets from [Vilmedic Datasets](https://vilmedic.app/datasets/text).
 
-This directory contains dataset preprocessing code for the RaLEs project. Below are the datasets used along with instructions to download and preprocess them:
+Alternatively, you can follow the following steps to obtain each dataset.
 
 ### Natural Language Understanding (NLU) Datasets
 

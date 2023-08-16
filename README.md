@@ -1,5 +1,5 @@
 # Overview
-This repository contains code and results for RaLEs: Radiology Language Evaluations (manuscript under consideration).
+This repository contains code and results for RaLEs: Radiology Language Evaluations (manuscript under consideration). [Check out the leaderboard](https://ralesbenchmark.github.io)!
 
 # Contents
 The repository is organized in 5 modules, each contained within its own directory: 
@@ -11,7 +11,9 @@ The repository is organized in 5 modules, each contained within its own director
 | [evaluation](evaluation) | Provides code for obtaining evaluation metrics based on model predictions for RaLEs tasks |
 | [results](results) | Includes summary of results of current RaLEs benchmark 
 
-# Install instructions
+## Usage
+
+### 1. Install instructions
 First create and activate a conda environment:
 ```
 conda create -n rales python=3.8.13
@@ -28,12 +30,22 @@ Finally, install additional requirements:
 while read requirement; do conda install --yes $requirement || pip install $requirement; done < requirements.txt
 ```
 
-# FAQs
-Yes, you can create a FAQs section with collapsible dropdowns using GitHub-flavored Markdown combined with a bit of HTML. 
+### 2. Data Preparation
+Navigate to the `datasets` directory and follow the instructions in the [datasets README](datasets/README.md) for downloading and preprocessing the RaLEs datasets.
 
-Here's an example of how you can structure a FAQs section with collapsible dropdowns:
+### 3. Training
+To fine-tune a model for a specific RaLEs task, navigate to the `fine_tuning` directory and use the command-line interface detailed in the [fine_tuning README](fine_tuning/README.md).
 
----
+### 4. Inference
+After training, you can perform inference on the RaLEs tasks using the pre-trained model. Go to the `inference` directory and refer to the [inference README](inference/README.md) for detailed instructions.
+
+### 5. Evaluation
+Evaluate the performance of your model using the scripts in the `evaluation` directory. More details can be found in the [evaluation README](evaluation/README.md).
+
+### 6. Results
+Check the `results` directory for a summary of benchmark results for the RaLEs tasks. The [results README](results/README.md) provides further insights.
+
+For the current leaderboard, visit [RaLEs Benchmark Leaderboard](https://ralesbenchmark.github.io).
 
 ## Frequently Asked Questions (FAQs)
 
@@ -61,6 +73,7 @@ Here's an example of how you can structure a FAQs section with collapsible dropd
 <details>
   <summary>4. I'd like to contribute a dataset, how can I do that?</summary>
   
-  New dataset submissions are more than welcome. Full instructions for how to format and submit a dataset can be found in the [datasets directory](datasets/README.md). 
+  New dataset submissions are more than welcome. Full instructions for how to format and submit a dataset can be found in the [datasets directory](datasets/README.mddatasets/README.md#adding-a-dataset-to-the-rales-benchmark). 
   
 </details>
+
