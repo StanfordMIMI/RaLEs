@@ -1,90 +1,35 @@
-Contains dataset preprocessing code.
 
-Inputs:
-- paths to raw datasets (see ##instructions for downloading raw datasets)
+## RaLEs Datasets
 
-Outputs:
-- prepared datasets in RaLEs format
+**Note**: Users with appropriate Physionet credentials can directly download preprocessed datasets from [Vilmedic Datasets](https://vilmedic.app/datasets/text).
 
-# Data Download Instructions
+Alternatively, you can follow the following steps to obtain each dataset.
 
-## RadGraph (NLU)
-Access the dataset at https://physionet.org/content/radgraph/1.0.0/.
+### Natural Language Understanding (NLU) Datasets
 
-## RadSpRL (NLU)
-Download the Rad-SpRL.xml file from https://data.mendeley.com/datasets/yhb26hfz8n.
+#### 1. RadGraph
+- **Download**: Access the dataset on [Physionet](https://physionet.org/content/radgraph/1.0.0/).
+- **Preprocessing**: Run the `convert_radgraph_to_dygiepp.py` script, specifying the location where the RadGraph dataset is saved.
 
-## MIMIC procedure selection (NLU)
-Access the MIMIC-III dataset at https://physionet.org/content/mimiciii/1.4/.
+#### 2. RadSpRL
+- **Download**: Get the `Rad-SpRL.xml` file from [Mendeley](https://data.mendeley.com/datasets/yhb26hfz8n).
+- **Preprocessing**: Run the `convert_radsprl_to_dygiepp.py` script, specifying the location where the RadSpRL dataset is saved.
 
-## Stanza NER (NLU)
-A link for access to this dataset will be provided upon institutional review board approval.
+#### 3. MIMIC Procedure Selection
+- **Download**: Access the [MIMIC-III dataset](https://physionet.org/content/mimiciii/1.4/).
+- **Preprocessing**: In the `mimiciii_procedure_selection` folder, run the `create_dataset.py` followed by the `create_train_dev_test_split.py` scripts, specifying the location where the MIMIC dataset is saved.
 
-## MEDIQA 2021 (NLG)
-Follow the instructions for dataset download here https://github.com/abachaa/MEDIQA2021/tree/main/Task3.
+#### 4. Stanza NER
+A link for access to this dataset will be provided upon institutional review board approval. The dataset will be provided without requiring further preprocessing.
 
-## RaLEs Radiology Report Generation (NLG)
+### Natural Language Generation (NLG) Datasets
 
-#### Reports
-You must a create a physionet account with permissions to download MIMIC-CXR Database. 
+#### 1. MEDIQA 2021 Radiology Report Summarization
+- **Download**: Follow the instructions for dataset download on [GitHub](https://github.com/abachaa/MEDIQA2021/tree/main/Task3).
 
-Download `mimic-cxr-reports.zip` from https://physionet.org/content/mimic-cxr/2.0.0/mimic-cxr-reports.zip.
-Place the extracted `mimic-cxr-reports` folder in the `datasets/rrg_rrs/mimic-cxr` folder. 
+#### 2. BioNLP2023 Radiology Report Summarization
 
-Download `mimic-cxr-2.0.0-split.csv.gz` and `mimic-cxr-2.0.0-metadata.csv.gz` from https://physionet.org/content/mimic-cxr-jpg/2.0.0/. Place the 
-extracted files in the `datasets/rrg_rrs/mimic-cxr` folder.
+- **ViLMedic download** You can download this directly from [ViLMedic](https://vilmedic.app/misc/bionlp23/sharedtask)
 
-``` 
-datasets/rrg_rrs/mimic-cxr
-├── mimic-cxr-reports
-│   └── files
-│       ├── p10
-│       ├── p11
-│       ├── p12
-│       ├── p13
-│       ├── p14
-│       ├── p15
-│       ├── p16
-│       ├── p17
-│       ├── p18
-│       └── p19
-├── create_section_files.py
-├── make_mimic_cxr.py
-├── get_chexbert_label.py
-├── section_parser.py
-├── mimic-cxr-2.0.0-split.csv
-├── mimic-cxr-2.0.0-metadata.csv
-└── README.md
-```
-
-# Data Preprocessing Instructions
-
-## RadGraph (NLU)
-Run the `convert_radgraph_to_dygiepp.py` in this folder, specifying the location where the RadGraph dataset is saved.
-
-## RadSpRL (NLU)
-Run the `convert_radsprl_to_dygiepp.py` script in this folder, specifying the location where the RadSpRL dataset is saved.
-
-## MIMIC procedure selection (NLU)
-Run the `create_dataset.py` followed by the `create_train_dev_test_split.py` scripts in the `mimiciii_procedure_selection` folder, specifying the location where the MIMIC dataset is saved.
-
-## Stanza NER (NLU)
-The dataset will be provided without requiring further preprocessing.
-
-## MEDIQA 2021 (NLG)
-
-## RaLEs Radiology Report Generation (NLG)
-
-Go to `datasets/rrg_rrs/mimic-cxr` folder, then run the command:
-
-```
-python create_section_files.py --no_split --reports_path ./mimic-cxr-reports/files --output_path ./ 
-```
-
-Then:
-
-```
-python make_mimic_cxr.py --task rrg
-```
-The output will be in the current directory in RRG folder.
-
+- **Download**: You must create a Physionet account with permissions to download the MIMIC-CXR Database. Get the `mimic-cxr-reports.zip` and related files from [Physionet](https://physionet.org/content/mimic-cxr/2.0.0/mimic-cxr-reports.zip) and organize them as mentioned.
+- **Preprocessing**: Navigate to `datasets/rrg_rrs/mimic-cxr` and run the provided commands to preprocess the dataset.
