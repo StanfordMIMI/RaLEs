@@ -1,7 +1,7 @@
 from omegaconf import OmegaConf
 import argparse
-from eval_rales_ner import do_ner_rales
-from eval_rales_doc_classification import do_document_classification_rales
+from tune_rales_ner import do_ner_rales
+from tune_rales_doc_classification import do_document_classification_rales
 
 
 def parse_config():
