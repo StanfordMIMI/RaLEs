@@ -21,4 +21,4 @@ This directory contains code and utilities for fine-tuning models on the RaLEs d
 1. **Prepare Data**: Make sure you've preprocessed the data (see instructions in the [datasets directory](../datasets/README.md)).
 2. Update **constants.py** file with appropriate path to datasets.
 3. **Fine-tuning**: Use `cli.py` to initiate the fine-tuning process. Specify the path to a config YAML file.
-4. Next, use your model for [inference](../datasets/README.md).
+4. Next, use your model for [inference](../inference/README.md).
