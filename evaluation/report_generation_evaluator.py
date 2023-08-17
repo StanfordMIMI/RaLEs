@@ -62,5 +62,18 @@ if  __name__=='__main__':
     generations = load_dataset('json', data_files={'data': args.generations_filepath})['data']['predicted_impression']
     ground_truths = load_dataset('json', data_files={'data': args.reference_filepath})['data']['impression']
 
-    evaluator = ReportGenerationEvaluator(scorers=args.scorers)
-    print(evaluator.evaluate(generations, ground_truths))
+    if len(generations) > 1000: #do batched evaluation and average at the end
+        lens = []
+        scores = []
+        for i in range(0, len(generations), 1000):
+            evaluator = ReportGenerationEvaluator(scorers=args.scorers)
+            lens.append(len(generations[i:i+1000]))
+            scores.append(evaluator.evaluate(generations[i:i+1000], ground_truths[i:i+1000]))
+            print(f'evaluating generations {i} to {i+len(generations[i:i+1000])}')
+            print(evaluator.evaluate(generations[i:i+1000], ground_truths[i:i+1000]))
+        weighted_average_scores = {k:sum([lens[i]*scores[i][k] for i in range(len(lens))])/sum(lens) for k in scores[0].keys()}
+        print(f'overall scores {weighted_average_scores}')
+    else:
+        evaluator = ReportGenerationEvaluator(scorers=args.scorers)
+        print(evaluator.evaluate(generations, ground_truths))
+        

@@ -1,7 +1,3 @@
-Of course! Here's the revised `results/README.md`:
-
----
-
 ## RaLEs Benchmark Results
 
 This directory contains results and utilities related to the RaLEs benchmark.
