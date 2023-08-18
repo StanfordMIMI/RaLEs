@@ -30,6 +30,7 @@ Finally, install additional requirements:
 ```
 while read requirement; do conda install --yes $requirement || pip install $requirement; done < requirements.txt
 ```
+(RaLEs has been developed and tested using Ubuntu 22.04.3)
 
 **Note:** RaLEs has been developed and tested using Ubuntu 22.04.3
 
