@@ -9,8 +9,10 @@ import evaluate
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
 import matplotlib.pyplot as plt
 from evaluate_stanza_models import bootstrap
+
 # from metrics import AccuracyAtK
-MIMIC_PROTOCOLING_DIR = '/PATH_TO//data/mimic_autoprocedure_selection/' #TODO: fix relative import
+MIMIC_PROTOCOLING_DIR = '/dataNAS/people/jmz/data/mimic_autoprocedure_selection/' #TODO: fix relative import
+LOINC_PATH = '/dataNAS/people/jmz/data/ontologies/loinc_radlex'
 
 def parse_args():
     parser = argparse.ArgumentParser()
