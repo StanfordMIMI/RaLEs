@@ -10,7 +10,6 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classifica
 import matplotlib.pyplot as plt
 from evaluate_stanza_models import bootstrap
 
-# from metrics import AccuracyAtK
 MIMIC_PROTOCOLING_DIR = '/dataNAS/people/jmz/data/mimic_autoprocedure_selection/' #TODO: fix relative import
 LOINC_PATH = '/dataNAS/people/jmz/data/ontologies/loinc_radlex'
 
