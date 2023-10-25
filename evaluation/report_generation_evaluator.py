@@ -64,6 +64,7 @@ if  __name__=='__main__':
     ground_truths = load_dataset('json', data_files={'data': args.reference_filepath})['data']['impression']
 
     evaluator = ReportGenerationEvaluator(scorers=args.scorers)
+
     if len(generations) > 1000: #do batched evaluation and average at the end
         lens = []
         scores = []
@@ -79,3 +80,4 @@ if  __name__=='__main__':
     else:
         evaluator = ReportGenerationEvaluator(scorers=args.scorers)
         print({k:f'{v:.3f}' for k,v in evaluator.evaluate(generations, ground_truths).items()})
+        
