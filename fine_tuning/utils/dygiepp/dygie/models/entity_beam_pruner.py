@@ -138,8 +138,6 @@ class Pruner(torch.nn.Module):
         # Always keep at least one item to avoid edge case with empty matrix.
         max_items_to_keep = max(num_items_to_keep.max().item(), 1)
 
-        max_items_to_keep = num_items_to_keep.max()
-
         if scores.size(-1) != 1 or scores.dim() != 3:
             raise ValueError(f"The scorer passed to Pruner must produce a tensor of shape"
                              f"(batch_size, num_items, 1), but found shape {scores.size()}")

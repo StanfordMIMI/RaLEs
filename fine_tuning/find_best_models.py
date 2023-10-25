@@ -10,7 +10,7 @@ import pandas as pd
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--results_dir', type=str, default='../results/ner/')
-    parser.add_argument('--output_dir', type=str, default='./classification/')
+    
     args = parser.parse_args()
     return args
 
