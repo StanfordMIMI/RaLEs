@@ -1,0 +1,6 @@
+eval_name: roberta_base
+model_name_or_path: roberta-base
+tokenizer_path: roberta-base
+cache_dir: /DEIDPATH/models/transformers_downloads/
+eval_datasets: ['mimiciii_ct_procedure']
+output_dir: '../results/classification/'

@@ -1,0 +1,6 @@
+RADGRAPH_DIR = '/PATH_TO//data/radgraph/1.0.0'
+RADSPRL_DIR = '/PATH_TO//data/radsprl/'
+STANZA_DIR = '/PATH_TO//data/radiology_NER/Radiology-NER/'
+MIMIC_PROTOCOLING_DIR = '/PATH_TO//data/mimic_autoprocedure_selection/'
+TRANSFORMERS_DOWNLOAD_PATH = '/PATH_TO//models/transformers_downloads/'
+STANFORD_BODYCT_PROTOCOL_DIR = '/PATH_TO//data/autoprotocol/cache/'
