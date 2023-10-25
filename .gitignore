@@ -140,4 +140,3 @@ fine_tuning/wandb/*
 */*/__pycache__/*
 
 evaluation/bootstrap_results/*
-results/*/
