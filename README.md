@@ -33,8 +33,6 @@ while read requirement; do conda install --yes $requirement || pip install $requ
 
 **Note:** RaLEs has been developed and tested using Ubuntu 22.04.3
 
-**Note:** RaLEs has been developed and tested using Ubuntu 22.04.3
-
 ### 2. Data Preparation
 Navigate to the `datasets` directory and follow the instructions in the [datasets README](datasets/README.md) for downloading and preprocessing the RaLEs datasets.
 
@@ -100,3 +98,4 @@ For the current leaderboard, visit [RaLEs Benchmark Leaderboard](https://ralesbe
   year = {2023}
 }
 ```
+
