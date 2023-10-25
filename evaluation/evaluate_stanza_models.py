@@ -15,7 +15,6 @@ import ast
 # from metrics import AccuracyAtK
 STANZA_DIR = '/DEIDPATH/data/radiology_NER/Radiology-NER/' #TODO: fix relative import
 
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--predictions_fpath', type=str, default='../inference/predictions/gatortron_mimiciii_ct_procedure_val/predictions.json')
