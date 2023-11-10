@@ -90,12 +90,13 @@ For the current leaderboard, visit [RaLEs Benchmark Leaderboard](https://ralesbe
 
 ## Bibtex
 ```
-@inproceedings{zambranochaves2023rales,
-  author    = {Zambrano Chaves, Juan Manuel and Bhaskhar, Nandita and Attias, Maayane and Delbrouck, Jean-Benoit and Rubin, Daniel and Loening, Andreas Markus and Langlotz, Curtis and Chaudhari, Akshay S},
-  title     = {RaLEs: a Benchmark for Radiology Language Evaluations},
-  booktitle = {Advances in Neural Information Processing Systems},
-  volume = {36},
-  year = {2023}
+@inproceedings{
+chaves2023rales,
+title={Ra{LE}s: a Benchmark for Radiology Language Evaluations},
+author={Juan Manuel Zambrano Chaves and Nandita Bhaskhar and Maayane Attias and Jean-Benoit Delbrouck and Daniel Rubin and Andreas Markus Loening and Curtis Langlotz and Akshay S Chaudhari},
+booktitle={Thirty-seventh Conference on Neural Information Processing Systems Datasets and Benchmarks Track},
+year={2023},
+url={https://openreview.net/forum?id=PWLGrvoqiR}
 }
 ```
 
