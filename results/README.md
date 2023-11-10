@@ -4,7 +4,7 @@ This directory contains results and utilities related to the RaLEs benchmark.
 
 ### Overview
 
-The `results` directory holds the key outcomes and benchmarks of the RaLEs project. Within this directory, the `best_results_files` subdirectory houses the CSV files detailing the best results obtained for various tasks.
+The `results` directory holds the key outcomes and benchmarks of the RaLEs project. 
 
 ### Reproducing Paper Figures
 
