@@ -1,6 +1,6 @@
 ## RaLEs Datasets
 
-**NOTE**: Users with appropriate Physionet credentials (requires MIMIC-III and MIMIC-CXR DUA agreement) can directly download preprocessed datasets from [Vilmedic Datasets](https://vilmedic.app/datasets/text).
+**NOTE**: Users with appropriate Physionet credentials (requires MIMIC-III and MIMIC-CXR DUA agreement) can directly download preprocessed datasets from [Vilmedic Datasets](https://vilmedic.app/datasets/papers).
 
 Alternatively, you can follow the following steps to obtain each dataset.
 
